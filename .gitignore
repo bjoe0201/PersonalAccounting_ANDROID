@@ -32,3 +32,22 @@ google-services.json
 
 # Android Profiling
 *.hprof
+
+# Internal planning docs (not for public repository)
+PLANS/
+
+# Sensitive files / credentials
+.env
+.env.*
+*.pem
+*.key
+*.p12
+*.pfx
+*.crt
+*.cer
+*.der
+key.properties
+keystore.properties
+service-account*.json
+*-service-account.json
+
