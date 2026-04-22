@@ -1,53 +1,94 @@
-# Gradle files
+# ============================================================
+# Gradle
+# ============================================================
 .gradle/
 build/
+**/build/
 
-# Local configuration file (sdk path, etc)
+# ============================================================
+# Local configuration (SDK path, signing config, etc.)
+# ============================================================
 local.properties
+key.properties
+keystore.properties
 
-# Log/OS Files
-*.log
-
-# Android Studio generated files and folders
+# ============================================================
+# Android Studio / IntelliJ IDEA
+# ============================================================
+.idea/
+*.iml
 captures/
 .externalNativeBuild/
 .cxx/
-*.aab
-*.apk
 output-metadata.json
 
-# IntelliJ
-*.iml
-.idea/
-misc.xml
-deploymentTargetDropDown.xml
-render.experimental.xml
+# ============================================================
+# Compiled output / release artifacts
+# ============================================================
+*.apk
+*.aab
+*.aar
+*.hprof
+app/release/
 
-# Keystore files
+# ============================================================
+# Keystore & signing credentials
+# ============================================================
 *.jks
 *.keystore
-
-# Google Services (e.g. APIs or Firebase)
-google-services.json
-
-# Android Profiling
-*.hprof
-
-# Internal planning docs (not for public repository)
-PLANS/
-
-# Sensitive files / credentials
-.env
-.env.*
-*.pem
-*.key
 *.p12
 *.pfx
+*.pem
+*.key
 *.crt
 *.cer
 *.der
-key.properties
-keystore.properties
+
+# ============================================================
+# Google / Firebase
+# ============================================================
+google-services.json
 service-account*.json
 *-service-account.json
 
+# ============================================================
+# Sensitive / environment files
+# ============================================================
+.env
+.env.*
+
+# ============================================================
+# OS generated files
+# ============================================================
+.DS_Store
+.DS_Store?
+._*
+.Spotlight-V100
+.Trashes
+ehthumbs.db
+Thumbs.db
+desktop.ini
+
+# ============================================================
+# Logs & temporary files
+# ============================================================
+*.log
+*.orig
+*.tmp
+*.bak
+*.swp
+
+# ============================================================
+# Kotlin compiler cache
+# ============================================================
+.kotlin/
+
+# ============================================================
+# Internal planning docs (not for public repository)
+# ============================================================
+PLANS/
+
+# ============================================================
+# Claude Code memory / AI assistant files
+# ============================================================
+.claude/
