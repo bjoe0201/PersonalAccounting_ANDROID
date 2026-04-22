@@ -1,0 +1,110 @@
+<?xml version="1.0" encoding="utf-8"?>
+<!--
+    Personal Accounting App Icon — Foreground Layer
+    Design: Open wallet body with a coin showing "¥" symbol,
+            small upward trend line in the top-right corner.
+    Canvas: 108dp × 108dp (safe zone: 72dp centred, i.e. 18dp inset on each side)
+    All coordinates are within the 18–90dp safe zone.
+-->
+<vector xmlns:android="http://schemas.android.com/apk/res/android"
+    android:width="108dp"
+    android:height="108dp"
+    android:viewportWidth="108"
+    android:viewportHeight="108">
+
+    <!-- ── Wallet body (rounded rectangle) ── -->
+    <path
+        android:fillColor="#FFFFFF"
+        android:pathData="
+            M28,38
+            Q28,32 34,32
+            L74,32
+            Q80,32 80,38
+            L80,72
+            Q80,78 74,78
+            L34,78
+            Q28,78 28,72
+            Z" />
+
+    <!-- Wallet flap / top fold line -->
+    <path
+        android:strokeColor="#E8F5E9"
+        android:strokeWidth="1.5"
+        android:fillColor="#00000000"
+        android:pathData="M28,46 L80,46" />
+
+    <!-- ── Coin (circle) ── -->
+    <path
+        android:fillColor="#FDD835"
+        android:pathData="
+            M54,58
+            m-13,0
+            a13,13 0 1,0 26,0
+            a13,13 0 1,0 -26,0" />
+
+    <!-- Coin inner ring -->
+    <path
+        android:strokeColor="#F9A825"
+        android:strokeWidth="1.2"
+        android:fillColor="#00000000"
+        android:pathData="
+            M54,58
+            m-10,0
+            a10,10 0 1,0 20,0
+            a10,10 0 1,0 -20,0" />
+
+    <!-- Coin symbol "¥" -->
+    <!-- Horizontal bars of ¥ -->
+    <path
+        android:strokeColor="#E65100"
+        android:strokeWidth="1.8"
+        android:strokeLineCap="round"
+        android:fillColor="#00000000"
+        android:pathData="M50,57.5 L58,57.5" />
+    <path
+        android:strokeColor="#E65100"
+        android:strokeWidth="1.8"
+        android:strokeLineCap="round"
+        android:fillColor="#00000000"
+        android:pathData="M50,60.5 L58,60.5" />
+    <!-- Vertical stem of ¥ -->
+    <path
+        android:strokeColor="#E65100"
+        android:strokeWidth="1.8"
+        android:strokeLineCap="round"
+        android:fillColor="#00000000"
+        android:pathData="M54,55 L54,64" />
+    <!-- Left diagonal of ¥ -->
+    <path
+        android:strokeColor="#E65100"
+        android:strokeWidth="1.8"
+        android:strokeLineCap="round"
+        android:fillColor="#00000000"
+        android:pathData="M50,51 L54,57" />
+    <!-- Right diagonal of ¥ -->
+    <path
+        android:strokeColor="#E65100"
+        android:strokeWidth="1.8"
+        android:strokeLineCap="round"
+        android:fillColor="#00000000"
+        android:pathData="M58,51 L54,57" />
+
+    <!-- ── Trend line (top-right of wallet, above flap) ── -->
+    <path
+        android:strokeColor="#A5D6A7"
+        android:strokeWidth="2"
+        android:strokeLineCap="round"
+        android:strokeLineJoin="round"
+        android:fillColor="#00000000"
+        android:pathData="M62,43 L66,39 L70,41 L74,35" />
+
+    <!-- Trend line end dot -->
+    <path
+        android:fillColor="#A5D6A7"
+        android:pathData="
+            M74,35
+            m-2,0
+            a2,2 0 1,0 4,0
+            a2,2 0 1,0 -4,0" />
+
+</vector>
