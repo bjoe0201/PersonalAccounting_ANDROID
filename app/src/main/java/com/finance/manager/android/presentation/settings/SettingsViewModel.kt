@@ -82,6 +82,10 @@ class SettingsViewModel @Inject constructor(
         _uiState.update { it.copy(message = null) }
     }
 
+    fun showComingSoon(featureName: String) {
+        _uiState.update { it.copy(message = "$featureName 功能尚未提供，敬請期待") }
+    }
+
     fun resetDatabase() {
         viewModelScope.launch {
             _uiState.update { it.copy(isBusy = true, progressMessage = "正在清空並初始化資料庫…") }

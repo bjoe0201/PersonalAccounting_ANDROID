@@ -25,6 +25,8 @@ import androidx.compose.material3.MaterialTheme
 import androidx.compose.material3.Scaffold
 import androidx.compose.material3.SnackbarHost
 import androidx.compose.material3.SnackbarHostState
+import androidx.compose.material3.Switch
+import androidx.compose.material3.SwitchDefaults
 import androidx.compose.material3.Text
 import androidx.compose.material3.TextButton
 import androidx.compose.runtime.Composable
@@ -172,6 +174,33 @@ fun SettingsScreen(
                 }
             }
 
+            // ── 安全性 ──
+            item {
+                SettingsGroup(
+                    title = "安全性",
+                    items = listOf(
+                        SettingsItemData(
+                            icon = "🔒",
+                            label = "PIN 鎖定",
+                            description = "未啟用",
+                            toggle = false,
+                            onToggle = {
+                                viewModel.showComingSoon("PIN 鎖定")
+                            },
+                        ),
+                        SettingsItemData(
+                            icon = "👆",
+                            label = "生物辨識",
+                            description = "未啟用",
+                            toggle = false,
+                            onToggle = {
+                                viewModel.showComingSoon("生物辨識")
+                            },
+                        ),
+                    ),
+                )
+            }
+
             // ── 帳目管理 ──
             item {
                 SettingsGroup(
@@ -257,6 +286,8 @@ private data class SettingsItemData(
     val description: String? = null,
     val arrow: Boolean = false,
     val danger: Boolean = false,
+    val toggle: Boolean? = null,
+    val onToggle: ((Boolean) -> Unit)? = null,
     val onClick: (() -> Unit)? = null,
 )
 
@@ -323,6 +354,19 @@ private fun SettingsGroup(
                             contentDescription = null,
                             modifier = Modifier.size(18.dp),
                             tint = if (item.danger) ec.danger else OutlineVariant,
+                        )
+                    }
+                    if (item.toggle != null) {
+                        Switch(
+                            checked = item.toggle,
+                            onCheckedChange = { item.onToggle?.invoke(it) },
+                            colors = SwitchDefaults.colors(
+                                checkedThumbColor = Color.White,
+                                checkedTrackColor = MaterialTheme.colorScheme.primary,
+                                uncheckedThumbColor = Color.White,
+                                uncheckedTrackColor = OutlineVariant,
+                                uncheckedBorderColor = Color.Transparent,
+                            ),
                         )
                     }
                 }

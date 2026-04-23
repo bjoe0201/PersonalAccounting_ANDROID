@@ -210,15 +210,12 @@ fun AccountRegisterScreen(
         val account = uiState.account
         val txs = uiState.transactions
         val balance = account?.currentBalance ?: 0.0
-        val monthIncome = txs.filter { it.amount > 0 }.sumOf { it.amount }
-        val monthExpense = txs.filter { it.amount < 0 }.sumOf { it.amount }
-
-        // Group transactions by date
-        val groupedByDate = remember(txs) {
-            txs.sortedByDescending { it.transactionDate }
-                .groupBy { it.transactionDate }
-                .toSortedMap(compareByDescending { it })
-        }
+        val currentYm = YearMonth.now()
+        // 本月收支（永遠對應「本月」標題）
+        val monthIncome = txs.filter { YearMonth.from(it.transactionDate) == currentYm && it.amount > 0 }
+            .sumOf { it.amount }
+        val monthExpense = txs.filter { YearMonth.from(it.transactionDate) == currentYm && it.amount < 0 }
+            .sumOf { it.amount }
 
         // Available months for month tabs
         val availableMonths = remember(txs) {
@@ -226,7 +223,26 @@ fun AccountRegisterScreen(
                 .distinct()
                 .sorted()
         }
-        var selectedMonth by remember { mutableStateOf(YearMonth.now()) }
+        // 預設選擇最新的有資料月份；若無交易則用當月
+        var selectedMonth by remember(availableMonths) {
+            mutableStateOf(
+                availableMonths.lastOrNull { it == currentYm }
+                    ?: availableMonths.lastOrNull()
+                    ?: currentYm
+            )
+        }
+
+        // 只顯示選定月份的交易
+        val filteredTxs = remember(txs, selectedMonth) {
+            txs.filter { YearMonth.from(it.transactionDate) == selectedMonth }
+        }
+        val groupedByDate = remember(filteredTxs) {
+            filteredTxs.sortedByDescending { it.transactionDate }
+                .groupBy { it.transactionDate }
+                .toSortedMap(compareByDescending { it })
+        }
+        // 選定月份淨額（用於期末結算 footer）
+        val selectedMonthNet = filteredTxs.sumOf { it.amount }
 
         Column(
             modifier = Modifier
@@ -238,12 +254,13 @@ fun AccountRegisterScreen(
             Row(
                 modifier = Modifier
                     .fillMaxWidth()
-                    .padding(horizontal = 8.dp, vertical = 12.dp),
+                    .padding(horizontal = 14.dp, vertical = 12.dp),
                 verticalAlignment = Alignment.CenterVertically,
             ) {
-                IconButton(onClick = onNavigateBack) {
+                IconButton(onClick = onNavigateBack, modifier = Modifier.size(40.dp)) {
                     Icon(Icons.AutoMirrored.Filled.ArrowBack, contentDescription = "返回")
                 }
+                Spacer(Modifier.width(4.dp))
                 Column(modifier = Modifier.weight(1f)) {
                     Text(
                         account?.accountName.orEmpty(),
@@ -330,9 +347,11 @@ fun AccountRegisterScreen(
                                 .padding(horizontal = 14.dp, vertical = 5.dp),
                         ) {
                             Text(
-                                "${month.monthValue}月",
+                                text = if (isSelected) "${month.monthValue}月 ✓"
+                                else "${month.monthValue}月",
                                 style = MaterialTheme.typography.labelMedium,
                                 color = if (isSelected) Color.White else ec.onSurfaceVariant,
+                                fontWeight = if (isSelected) FontWeight.SemiBold else FontWeight.Normal,
                             )
                         }
                     }
@@ -340,7 +359,7 @@ fun AccountRegisterScreen(
             }
 
             // ── Transaction List ──
-            if (txs.isEmpty()) {
+            if (filteredTxs.isEmpty()) {
                 Box(
                     modifier = Modifier
                         .fillMaxSize()
@@ -348,7 +367,8 @@ fun AccountRegisterScreen(
                     contentAlignment = Alignment.Center,
                 ) {
                     Text(
-                        "目前沒有交易資料",
+                        if (txs.isEmpty()) "目前沒有交易資料"
+                        else "${selectedMonth.monthValue}月沒有交易資料",
                         color = ec.onSurfaceVariant,
                     )
                 }
@@ -435,14 +455,14 @@ fun AccountRegisterScreen(
                                 verticalAlignment = Alignment.CenterVertically,
                             ) {
                                 Text(
-                                    "${selectedMonth.monthValue}月期末餘額",
+                                    "${selectedMonth.monthValue}月淨額",
                                     style = MaterialTheme.typography.labelMedium,
                                     color = ec.onSurfaceVariant,
                                 )
                                 Text(
-                                    "T\$${formatAmount(balance)}",
+                                    "${if (selectedMonthNet >= 0) "+" else "-"}T\$${formatAmount(selectedMonthNet)}",
                                     style = MaterialTheme.typography.bodyMedium.copy(fontWeight = FontWeight.Bold),
-                                    color = MaterialTheme.colorScheme.primary,
+                                    color = if (selectedMonthNet >= 0) ec.incomeGreen else ec.expenseRed,
                                 )
                             }
                         }

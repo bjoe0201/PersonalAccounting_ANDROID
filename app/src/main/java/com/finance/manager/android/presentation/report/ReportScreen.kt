@@ -20,7 +20,11 @@ import androidx.compose.foundation.lazy.items
 import androidx.compose.foundation.lazy.itemsIndexed
 import androidx.compose.foundation.shape.CircleShape
 import androidx.compose.foundation.shape.RoundedCornerShape
+import androidx.compose.material.icons.Icons
+import androidx.compose.material.icons.filled.ChevronLeft
+import androidx.compose.material.icons.filled.ChevronRight
 import androidx.compose.material3.CircularProgressIndicator
+import androidx.compose.material3.Icon
 import androidx.compose.material3.IconButton
 import androidx.compose.material3.MaterialTheme
 import androidx.compose.material3.Text
@@ -83,25 +87,26 @@ fun ReportScreen(
             modifier = Modifier
                 .fillMaxWidth()
                 .padding(horizontal = 16.dp, vertical = 10.dp),
-            horizontalArrangement = Arrangement.spacedBy(4.dp),
+            horizontalArrangement = Arrangement.spacedBy(8.dp),
         ) {
             tabs.forEach { (tab, label) ->
                 val isSelected = uiState.activeTab == tab
                 Box(
                     modifier = Modifier
                         .weight(1f)
-                        .clip(RoundedCornerShape(10.dp))
+                        .clip(RoundedCornerShape(100.dp))
                         .background(
                             if (isSelected) MaterialTheme.colorScheme.primary
                             else MaterialTheme.colorScheme.surfaceVariant,
                         )
                         .clickable { viewModel.selectTab(tab) }
-                        .padding(vertical = 8.dp),
+                        .padding(vertical = 10.dp),
                     contentAlignment = Alignment.Center,
                 ) {
                     Text(
                         label,
                         style = MaterialTheme.typography.labelMedium,
+                        fontWeight = if (isSelected) FontWeight.SemiBold else FontWeight.Normal,
                         color = if (isSelected) Color.White else ec.onSurfaceVariant,
                     )
                 }
@@ -143,27 +148,25 @@ private fun MonthlyTabContent(uiState: ReportUiState, viewModel: ReportViewModel
                 horizontalArrangement = Arrangement.SpaceBetween,
                 verticalAlignment = Alignment.CenterVertically,
             ) {
-                Box(
-                    modifier = Modifier
-                        .clip(RoundedCornerShape(8.dp))
-                        .background(MaterialTheme.colorScheme.surfaceVariant)
-                        .clickable { viewModel.previousMonth() }
-                        .padding(horizontal = 10.dp, vertical = 6.dp),
-                ) { Text("◀", style = MaterialTheme.typography.labelMedium) }
-
+                IconButton(onClick = { viewModel.previousMonth() }) {
+                    Icon(
+                        Icons.Filled.ChevronLeft,
+                        contentDescription = "上個月",
+                        tint = ec.onSurfaceVariant,
+                    )
+                }
                 Text(
                     "${uiState.month.year} 年 ${uiState.month.monthValue} 月",
                     style = MaterialTheme.typography.titleLarge.copy(fontWeight = FontWeight.SemiBold),
                     color = MaterialTheme.colorScheme.onSurface,
                 )
-
-                Box(
-                    modifier = Modifier
-                        .clip(RoundedCornerShape(8.dp))
-                        .background(MaterialTheme.colorScheme.surfaceVariant)
-                        .clickable { viewModel.nextMonth() }
-                        .padding(horizontal = 10.dp, vertical = 6.dp),
-                ) { Text("▶", style = MaterialTheme.typography.labelMedium) }
+                IconButton(onClick = { viewModel.nextMonth() }) {
+                    Icon(
+                        Icons.Filled.ChevronRight,
+                        contentDescription = "下個月",
+                        tint = ec.onSurfaceVariant,
+                    )
+                }
             }
         }
 
@@ -364,7 +367,7 @@ private fun MonthlyTabContent(uiState: ReportUiState, viewModel: ReportViewModel
                                         .fillMaxWidth()
                                         .height(4.dp)
                                         .clip(RoundedCornerShape(4.dp))
-                                        .background(MaterialTheme.colorScheme.surfaceVariant),
+                                        .background(ec.outlineVariant.copy(alpha = 0.3f)),
                                 ) {
                                     val pct = kotlin.math.abs(cat.percentage).toFloat()
                                         .coerceIn(0f, 100f) / 100f
@@ -463,24 +466,16 @@ private fun YearlyTabContent(uiState: ReportUiState, viewModel: ReportViewModel)
                 horizontalArrangement = Arrangement.SpaceBetween,
                 verticalAlignment = Alignment.CenterVertically,
             ) {
-                Box(
-                    modifier = Modifier
-                        .clip(RoundedCornerShape(8.dp))
-                        .background(MaterialTheme.colorScheme.surfaceVariant)
-                        .clickable { viewModel.previousYear() }
-                        .padding(horizontal = 10.dp, vertical = 6.dp),
-                ) { Text("◀", style = MaterialTheme.typography.labelMedium) }
+                IconButton(onClick = { viewModel.previousYear() }) {
+                    Icon(Icons.Filled.ChevronLeft, contentDescription = "上一年", tint = ec.onSurfaceVariant)
+                }
                 Text(
                     "${uiState.year} 年",
                     style = MaterialTheme.typography.titleLarge.copy(fontWeight = FontWeight.SemiBold),
                 )
-                Box(
-                    modifier = Modifier
-                        .clip(RoundedCornerShape(8.dp))
-                        .background(MaterialTheme.colorScheme.surfaceVariant)
-                        .clickable { viewModel.nextYear() }
-                        .padding(horizontal = 10.dp, vertical = 6.dp),
-                ) { Text("▶", style = MaterialTheme.typography.labelMedium) }
+                IconButton(onClick = { viewModel.nextYear() }) {
+                    Icon(Icons.Filled.ChevronRight, contentDescription = "下一年", tint = ec.onSurfaceVariant)
+                }
             }
         }
         item {
@@ -576,6 +571,7 @@ private fun YearlyTabContent(uiState: ReportUiState, viewModel: ReportViewModel)
 @Composable
 private fun TrendTabContent(uiState: ReportUiState, viewModel: ReportViewModel) {
     val monthlyData = uiState.yearlyReport?.monthlyData.orEmpty()
+    val ec = MaterialTheme.extendedColors
     LazyColumn(
         modifier = Modifier
             .fillMaxSize()
@@ -588,24 +584,16 @@ private fun TrendTabContent(uiState: ReportUiState, viewModel: ReportViewModel) 
                 horizontalArrangement = Arrangement.SpaceBetween,
                 verticalAlignment = Alignment.CenterVertically,
             ) {
-                Box(
-                    modifier = Modifier
-                        .clip(RoundedCornerShape(8.dp))
-                        .background(MaterialTheme.colorScheme.surfaceVariant)
-                        .clickable { viewModel.previousYear() }
-                        .padding(horizontal = 10.dp, vertical = 6.dp),
-                ) { Text("◀", style = MaterialTheme.typography.labelMedium) }
+                IconButton(onClick = { viewModel.previousYear() }) {
+                    Icon(Icons.Filled.ChevronLeft, contentDescription = "上一年", tint = ec.onSurfaceVariant)
+                }
                 Text(
                     "${uiState.year} 年餘額趨勢",
                     style = MaterialTheme.typography.titleLarge.copy(fontWeight = FontWeight.SemiBold),
                 )
-                Box(
-                    modifier = Modifier
-                        .clip(RoundedCornerShape(8.dp))
-                        .background(MaterialTheme.colorScheme.surfaceVariant)
-                        .clickable { viewModel.nextYear() }
-                        .padding(horizontal = 10.dp, vertical = 6.dp),
-                ) { Text("▶", style = MaterialTheme.typography.labelMedium) }
+                IconButton(onClick = { viewModel.nextYear() }) {
+                    Icon(Icons.Filled.ChevronRight, contentDescription = "下一年", tint = ec.onSurfaceVariant)
+                }
             }
         }
         if (monthlyData.isNotEmpty()) {
