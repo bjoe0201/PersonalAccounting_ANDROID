@@ -21,7 +21,6 @@ import androidx.compose.material3.Scaffold
 import androidx.compose.material3.Tab
 import androidx.compose.material3.TabRow
 import androidx.compose.material3.Text
-import androidx.compose.material3.TextButton
 import androidx.compose.material3.TopAppBar
 import androidx.compose.runtime.Composable
 import androidx.compose.runtime.collectAsState
@@ -46,7 +45,6 @@ private val ChartColors = listOf(
 @OptIn(ExperimentalMaterial3Api::class)
 @Composable
 fun ReportScreen(
-    onNavigateBack: () -> Unit,
     viewModel: ReportViewModel = hiltViewModel(),
 ) {
     val uiState by viewModel.uiState.collectAsState()
@@ -56,7 +54,6 @@ fun ReportScreen(
         topBar = {
             TopAppBar(
                 title = { Text("報表") },
-                navigationIcon = { TextButton(onClick = onNavigateBack) { Text("返回") } },
             )
         },
     ) { paddingValues ->

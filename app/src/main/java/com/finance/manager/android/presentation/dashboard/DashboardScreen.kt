@@ -20,11 +20,6 @@ import androidx.compose.foundation.shape.RoundedCornerShape
 import androidx.compose.material.icons.Icons
 import androidx.compose.material.icons.automirrored.filled.KeyboardArrowRight
 import androidx.compose.material.icons.filled.Add
-import androidx.compose.material.icons.filled.Home
-import androidx.compose.material.icons.filled.Info
-import androidx.compose.material.icons.filled.Person
-import androidx.compose.material.icons.filled.Settings
-import androidx.compose.material.icons.filled.Star
 import androidx.compose.material3.Card
 import androidx.compose.material3.CardDefaults
 import androidx.compose.material3.CircularProgressIndicator
@@ -45,13 +40,12 @@ import androidx.compose.ui.Modifier
 import androidx.compose.ui.draw.clip
 import androidx.compose.ui.graphics.Brush
 import androidx.compose.ui.graphics.Color
-import androidx.compose.ui.graphics.vector.ImageVector
 import androidx.compose.ui.text.font.FontWeight
 import androidx.compose.ui.unit.dp
 import androidx.hilt.navigation.compose.hiltViewModel
 import com.finance.manager.android.domain.model.Account
-import com.finance.manager.android.domain.model.AccountType
 import com.finance.manager.android.domain.model.TransactionListItem
+import com.finance.manager.android.presentation.components.accountTypeIcon
 import com.finance.manager.android.ui.theme.GradientEnd
 import com.finance.manager.android.ui.theme.GradientStart
 import com.finance.manager.android.ui.theme.extendedColors
@@ -327,15 +321,6 @@ private fun RecentTransactionRow(transaction: TransactionListItem) {
             color = amountColor,
         )
     }
-}
-
-private fun accountTypeIcon(type: AccountType): ImageVector = when (type) {
-    AccountType.Bank -> Icons.Filled.Home
-    AccountType.Cash -> Icons.Filled.Star
-    AccountType.CCard -> Icons.Filled.Info
-    AccountType.Invst -> Icons.Filled.Settings
-    AccountType.OthA -> Icons.Filled.Person
-    AccountType.OthL -> Icons.Filled.Person
 }
 
 private fun formatAmount(amount: Double): String {

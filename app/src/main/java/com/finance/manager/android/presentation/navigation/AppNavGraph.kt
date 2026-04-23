@@ -7,6 +7,7 @@ import androidx.compose.material.icons.filled.AddCircle
 import androidx.compose.material.icons.filled.Home
 import androidx.compose.material.icons.filled.Person
 import androidx.compose.material.icons.filled.Settings
+import androidx.compose.material3.ExperimentalMaterial3Api
 import androidx.compose.material3.Icon
 import androidx.compose.material3.MaterialTheme
 import androidx.compose.material3.NavigationBar
@@ -16,7 +17,11 @@ import androidx.compose.material3.Scaffold
 import androidx.compose.material3.Text
 import androidx.compose.runtime.Composable
 import androidx.compose.runtime.getValue
+import androidx.compose.runtime.mutableStateOf
+import androidx.compose.runtime.remember
+import androidx.compose.runtime.setValue
 import androidx.compose.ui.Modifier
+import androidx.compose.ui.graphics.vector.ImageVector
 import androidx.compose.ui.unit.dp
 import androidx.navigation.NavType
 import androidx.navigation.compose.NavHost
@@ -29,6 +34,7 @@ import com.finance.manager.android.presentation.account.AccountListScreen
 import com.finance.manager.android.presentation.accountregister.AccountRegisterScreen
 import com.finance.manager.android.presentation.currency.CurrencyManageScreen
 import com.finance.manager.android.presentation.dashboard.DashboardScreen
+import com.finance.manager.android.presentation.quickadd.QuickAddBottomSheet
 import com.finance.manager.android.presentation.report.ReportScreen
 import com.finance.manager.android.presentation.settings.SettingsScreen
 import com.finance.manager.android.presentation.transaction.TransactionFormScreen
@@ -36,19 +42,22 @@ import com.finance.manager.android.presentation.transaction.TransactionFormScree
 private data class BottomNavItem(
     val label: String,
     val route: String,
-    val icon: androidx.compose.ui.graphics.vector.ImageVector,
+    val selectedIcon: ImageVector,
+    val unselectedIcon: ImageVector,
 )
 
+@OptIn(ExperimentalMaterial3Api::class)
 @Composable
 fun AppNavGraph(modifier: Modifier = Modifier) {
     val navController = rememberNavController()
+    var showQuickAddSheet by remember { mutableStateOf(false) }
 
     val bottomNavItems = listOf(
-        BottomNavItem("首頁", Screen.Dashboard.route, Icons.Filled.Home),
-        BottomNavItem("帳戶", Screen.Accounts.route, Icons.Filled.Person),
-        BottomNavItem("記帳", "add_transaction", Icons.Filled.AddCircle),
-        BottomNavItem("報表", Screen.Reports.route, Icons.AutoMirrored.Filled.List),
-        BottomNavItem("設定", Screen.Settings.route, Icons.Filled.Settings),
+        BottomNavItem("首頁", Screen.Dashboard.route, Icons.Filled.Home, Icons.Filled.Home),
+        BottomNavItem("帳戶", Screen.Accounts.route, Icons.Filled.Person, Icons.Filled.Person),
+        BottomNavItem("記帳", "add_transaction", Icons.Filled.AddCircle, Icons.Filled.AddCircle),
+        BottomNavItem("報表", Screen.Reports.route, Icons.AutoMirrored.Filled.List, Icons.AutoMirrored.Filled.List),
+        BottomNavItem("設定", Screen.Settings.route, Icons.Filled.Settings, Icons.Filled.Settings),
     )
 
     val topLevelRoutes = setOf(Screen.Dashboard.route, Screen.Accounts.route, Screen.Reports.route, Screen.Settings.route)
@@ -65,12 +74,15 @@ fun AppNavGraph(modifier: Modifier = Modifier) {
                     tonalElevation = 3.dp,
                 ) {
                     bottomNavItems.forEach { item ->
-                        val selected = currentRoute == item.route
+                        val selected = when (item.route) {
+                            "add_transaction" -> showQuickAddSheet
+                            else -> currentRoute == item.route
+                        }
                         NavigationBarItem(
                             selected = selected,
                             onClick = {
                                 if (item.route == "add_transaction") {
-                                    navController.navigate(Screen.Accounts.route) { launchSingleTop = true }
+                                    showQuickAddSheet = true
                                 } else {
                                     navController.navigate(item.route) {
                                         popUpTo(Screen.Dashboard.route) { saveState = true }
@@ -79,7 +91,12 @@ fun AppNavGraph(modifier: Modifier = Modifier) {
                                     }
                                 }
                             },
-                            icon = { Icon(imageVector = item.icon, contentDescription = item.label) },
+                            icon = {
+                                Icon(
+                                    imageVector = if (selected) item.selectedIcon else item.unselectedIcon,
+                                    contentDescription = item.label,
+                                )
+                            },
                             label = { Text(item.label) },
                             colors = NavigationBarItemDefaults.colors(
                                 selectedIconColor = MaterialTheme.colorScheme.primary,
@@ -107,12 +124,11 @@ fun AppNavGraph(modifier: Modifier = Modifier) {
             }
 
             composable(Screen.Reports.route) {
-                ReportScreen(onNavigateBack = { navController.popBackStack() })
+                ReportScreen()
             }
 
             composable(Screen.Settings.route) {
                 SettingsScreen(
-                    onNavigateBack = { navController.popBackStack() },
                     onOpenCurrencies = { navController.navigate(Screen.Currencies.route) },
                 )
             }
@@ -169,7 +185,22 @@ fun AppNavGraph(modifier: Modifier = Modifier) {
             }
         }
     }
+
+    if (showQuickAddSheet) {
+        QuickAddBottomSheet(
+            onDismissRequest = { showQuickAddSheet = false },
+            onSelectAccount = { accountId ->
+                showQuickAddSheet = false
+                navController.navigate(Screen.TransactionForm.createRoute(accountId))
+            },
+            onOpenAccountPage = {
+                showQuickAddSheet = false
+                navController.navigate(Screen.Accounts.route) {
+                    popUpTo(Screen.Dashboard.route) { saveState = true }
+                    launchSingleTop = true
+                    restoreState = true
+                }
+            },
+        )
+    }
 }
-
-
-

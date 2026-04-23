@@ -42,7 +42,6 @@ import java.util.Date
 @OptIn(ExperimentalMaterial3Api::class)
 @Composable
 fun SettingsScreen(
-    onNavigateBack: () -> Unit,
     onOpenCurrencies: () -> Unit,
     viewModel: SettingsViewModel = hiltViewModel(),
 ) {
@@ -66,7 +65,6 @@ fun SettingsScreen(
         topBar = {
             TopAppBar(
                 title = { Text("設定") },
-                navigationIcon = { TextButton(onClick = onNavigateBack) { Text("返回") } },
             )
         },
         snackbarHost = { SnackbarHost(snackbarHostState) },

@@ -4,20 +4,31 @@ import androidx.compose.foundation.layout.Arrangement
 import androidx.compose.foundation.layout.Column
 import androidx.compose.foundation.layout.Row
 import androidx.compose.foundation.layout.Spacer
+import androidx.compose.foundation.clickable
+import androidx.compose.foundation.text.KeyboardOptions
 import androidx.compose.foundation.layout.fillMaxSize
 import androidx.compose.foundation.layout.fillMaxWidth
 import androidx.compose.foundation.layout.height
 import androidx.compose.foundation.layout.padding
-import androidx.compose.foundation.selection.selectable
+import androidx.compose.material.icons.Icons
+import androidx.compose.material.icons.automirrored.filled.ArrowBack
+import androidx.compose.material.icons.filled.DateRange
 import androidx.compose.material3.Button
 import androidx.compose.material3.CircularProgressIndicator
 import androidx.compose.material3.Checkbox
+import androidx.compose.material3.DatePicker
+import androidx.compose.material3.DatePickerDialog
 import androidx.compose.material3.DropdownMenuItem
 import androidx.compose.material3.ExperimentalMaterial3Api
 import androidx.compose.material3.ExposedDropdownMenuBox
 import androidx.compose.material3.ExposedDropdownMenuDefaults
+import androidx.compose.material3.Icon
+import androidx.compose.material3.IconButton
 import androidx.compose.material3.OutlinedTextField
 import androidx.compose.material3.Scaffold
+import androidx.compose.material3.SegmentedButton
+import androidx.compose.material3.SegmentedButtonDefaults
+import androidx.compose.material3.SingleChoiceSegmentedButtonRow
 import androidx.compose.material3.SnackbarHost
 import androidx.compose.material3.SnackbarHostState
 import androidx.compose.material3.Text
@@ -33,7 +44,11 @@ import androidx.compose.runtime.setValue
 import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
 import androidx.compose.ui.unit.dp
+import androidx.compose.ui.text.input.KeyboardType
 import androidx.hilt.navigation.compose.hiltViewModel
+import java.time.Instant
+import java.time.LocalDate
+import java.time.ZoneId
 
 @OptIn(ExperimentalMaterial3Api::class)
 @Composable
@@ -68,7 +83,11 @@ fun TransactionFormScreen(
         topBar = {
             TopAppBar(
                 title = { Text(if (transactionId == null) "新增交易" else "編輯交易") },
-                navigationIcon = { TextButton(onClick = onNavigateBack) { Text("返回") } },
+                navigationIcon = {
+                    IconButton(onClick = onNavigateBack) {
+                        Icon(Icons.AutoMirrored.Filled.ArrowBack, contentDescription = "返回")
+                    }
+                },
                 actions = { TextButton(onClick = viewModel::save) { Text("儲存") } },
             )
         },
@@ -132,36 +151,74 @@ private fun TransactionFormContent(
 ) {
     var categoryExpanded by remember { mutableStateOf(false) }
     var targetExpanded by remember { mutableStateOf(false) }
+    var showDatePicker by remember { mutableStateOf(false) }
     val entryTypes = if (uiState.form.transactionId == null) EntryType.entries else EntryType.entries.filter { it != EntryType.Transfer }
 
     Column(modifier = modifier, verticalArrangement = Arrangement.spacedBy(16.dp)) {
         Text(uiState.account?.accountName ?: "")
 
-        Row(horizontalArrangement = Arrangement.spacedBy(12.dp)) {
-            entryTypes.forEach { entryType ->
-                Row(
-                    modifier = Modifier.selectable(
-                        selected = uiState.entryType == entryType,
-                        onClick = { onEntryTypeChange(entryType) },
-                    ),
-                    verticalAlignment = Alignment.CenterVertically,
+        SingleChoiceSegmentedButtonRow(modifier = Modifier.fillMaxWidth()) {
+            entryTypes.forEachIndexed { index, entryType ->
+                SegmentedButton(
+                    selected = uiState.entryType == entryType,
+                    onClick = { onEntryTypeChange(entryType) },
+                    shape = SegmentedButtonDefaults.itemShape(index = index, count = entryTypes.size),
                 ) {
-                    androidx.compose.material3.RadioButton(
-                        selected = uiState.entryType == entryType,
-                        onClick = { onEntryTypeChange(entryType) },
-                    )
                     Text(entryType.displayName)
                 }
             }
         }
 
         OutlinedTextField(
-            modifier = Modifier.fillMaxWidth(),
+            modifier = Modifier
+                .fillMaxWidth()
+                .clickable { showDatePicker = true },
             value = uiState.form.date,
-            onValueChange = onDateChange,
-            label = { Text("日期 (yyyy-MM-dd)") },
+            onValueChange = {},
+            readOnly = true,
+            label = { Text("日期") },
+            trailingIcon = {
+                IconButton(onClick = { showDatePicker = true }) {
+                    Icon(Icons.Filled.DateRange, contentDescription = "選擇日期")
+                }
+            },
             singleLine = true,
         )
+
+        if (showDatePicker) {
+            val initialDate = runCatching { LocalDate.parse(uiState.form.date) }.getOrDefault(LocalDate.now())
+            val datePickerState = androidx.compose.material3.rememberDatePickerState(
+                initialSelectedDateMillis = initialDate
+                    .atStartOfDay(ZoneId.systemDefault())
+                    .toInstant()
+                    .toEpochMilli(),
+            )
+
+            DatePickerDialog(
+                onDismissRequest = { showDatePicker = false },
+                confirmButton = {
+                    TextButton(onClick = {
+                        val selectedDateMillis = datePickerState.selectedDateMillis
+                        if (selectedDateMillis != null) {
+                            val selectedDate = Instant.ofEpochMilli(selectedDateMillis)
+                                .atZone(ZoneId.systemDefault())
+                                .toLocalDate()
+                            onDateChange(selectedDate.toString())
+                        }
+                        showDatePicker = false
+                    }) {
+                        Text("確定")
+                    }
+                },
+                dismissButton = {
+                    TextButton(onClick = { showDatePicker = false }) {
+                        Text("取消")
+                    }
+                },
+            ) {
+                DatePicker(state = datePickerState)
+            }
+        }
 
         if (uiState.entryType != EntryType.Transfer) {
             OutlinedTextField(
@@ -178,6 +235,7 @@ private fun TransactionFormContent(
             value = uiState.form.amount,
             onValueChange = onAmountChange,
             label = { Text("金額") },
+            keyboardOptions = KeyboardOptions(keyboardType = KeyboardType.Decimal),
             singleLine = true,
         )
 
@@ -328,6 +386,7 @@ private fun CardBlock(
                 value = split.amount,
                 onValueChange = { onSplitAmountChange(split.id, it) },
                 label = { Text("分割金額") },
+                keyboardOptions = KeyboardOptions(keyboardType = KeyboardType.Decimal),
                 singleLine = true,
             )
             OutlinedTextField(
