@@ -11,15 +11,33 @@ import androidx.compose.ui.graphics.Color
 
 data class ExtendedColors(
     val incomeGreen: Color,
+    val incomeGreenLight: Color,
     val expenseRed: Color,
+    val expenseRedLight: Color,
     val transferBlue: Color,
+    val transferBlueLight: Color,
+    val danger: Color,
+    val warning: Color,
+    val surfaceElevated: Color,
+    val onSurfaceVariant: Color,
+    val outline: Color,
+    val outlineVariant: Color,
 )
 
 val LocalExtendedColors = staticCompositionLocalOf {
     ExtendedColors(
         incomeGreen = IncomeGreen,
+        incomeGreenLight = IncomeGreenLight,
         expenseRed = ExpenseRed,
+        expenseRedLight = ExpenseRedLight,
         transferBlue = TransferBlue,
+        transferBlueLight = TransferBlueLight,
+        danger = Danger,
+        warning = Warning,
+        surfaceElevated = SurfaceElevated,
+        onSurfaceVariant = OnSurfaceVariant,
+        outline = Outline,
+        outlineVariant = OutlineVariant,
     )
 }
 
@@ -37,6 +55,8 @@ private val LightColorScheme = lightColorScheme(
     onBackground = OnBackground,
     error = Error,
     onError = OnError,
+    outline = Outline,
+    outlineVariant = OutlineVariant,
 )
 
 private val DarkColorScheme = darkColorScheme(
@@ -55,9 +75,35 @@ fun FinanceTheme(
 ) {
     val colorScheme = if (darkTheme) DarkColorScheme else LightColorScheme
     val extendedColors = if (darkTheme) {
-        ExtendedColors(IncomeGreenDark, ExpenseRedDark, TransferBlueDark)
+        ExtendedColors(
+            incomeGreen = IncomeGreenDark,
+            incomeGreenLight = IncomeGreenLight,
+            expenseRed = ExpenseRedDark,
+            expenseRedLight = ExpenseRedLight,
+            transferBlue = TransferBlueDark,
+            transferBlueLight = TransferBlueLight,
+            danger = Danger,
+            warning = Warning,
+            surfaceElevated = SurfaceElevated,
+            onSurfaceVariant = OnSurfaceVariant,
+            outline = Outline,
+            outlineVariant = OutlineVariant,
+        )
     } else {
-        ExtendedColors(IncomeGreen, ExpenseRed, TransferBlue)
+        ExtendedColors(
+            incomeGreen = IncomeGreen,
+            incomeGreenLight = IncomeGreenLight,
+            expenseRed = ExpenseRed,
+            expenseRedLight = ExpenseRedLight,
+            transferBlue = TransferBlue,
+            transferBlueLight = TransferBlueLight,
+            danger = Danger,
+            warning = Warning,
+            surfaceElevated = SurfaceElevated,
+            onSurfaceVariant = OnSurfaceVariant,
+            outline = Outline,
+            outlineVariant = OutlineVariant,
+        )
     }
 
     CompositionLocalProvider(LocalExtendedColors provides extendedColors) {
@@ -70,4 +116,3 @@ fun FinanceTheme(
 
 val MaterialTheme.extendedColors: ExtendedColors
     @Composable get() = LocalExtendedColors.current
-

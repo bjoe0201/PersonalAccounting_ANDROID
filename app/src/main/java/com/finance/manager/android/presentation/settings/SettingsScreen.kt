@@ -1,30 +1,32 @@
 package com.finance.manager.android.presentation.settings
 
+import androidx.compose.foundation.background
+import androidx.compose.foundation.border
+import androidx.compose.foundation.clickable
 import androidx.compose.foundation.layout.Arrangement
+import androidx.compose.foundation.layout.Box
 import androidx.compose.foundation.layout.Column
+import androidx.compose.foundation.layout.Row
 import androidx.compose.foundation.layout.Spacer
 import androidx.compose.foundation.layout.fillMaxSize
 import androidx.compose.foundation.layout.fillMaxWidth
 import androidx.compose.foundation.layout.height
 import androidx.compose.foundation.layout.padding
-import androidx.compose.ui.Alignment
+import androidx.compose.foundation.layout.size
+import androidx.compose.foundation.layout.width
 import androidx.compose.foundation.lazy.LazyColumn
-import androidx.compose.foundation.lazy.items
+import androidx.compose.foundation.shape.RoundedCornerShape
+import androidx.compose.material.icons.Icons
+import androidx.compose.material.icons.automirrored.filled.KeyboardArrowRight
 import androidx.compose.material3.AlertDialog
-import androidx.compose.material3.Button
-import androidx.compose.material3.ButtonDefaults
-import androidx.compose.material3.Card
 import androidx.compose.material3.CircularProgressIndicator
-import androidx.compose.material3.ExperimentalMaterial3Api
-import androidx.compose.material3.HorizontalDivider
+import androidx.compose.material3.Icon
 import androidx.compose.material3.MaterialTheme
 import androidx.compose.material3.Scaffold
 import androidx.compose.material3.SnackbarHost
 import androidx.compose.material3.SnackbarHostState
 import androidx.compose.material3.Text
 import androidx.compose.material3.TextButton
-import androidx.compose.material3.TopAppBar
-import com.finance.manager.android.BuildConfig
 import androidx.compose.runtime.Composable
 import androidx.compose.runtime.LaunchedEffect
 import androidx.compose.runtime.collectAsState
@@ -32,14 +34,19 @@ import androidx.compose.runtime.getValue
 import androidx.compose.runtime.mutableStateOf
 import androidx.compose.runtime.remember
 import androidx.compose.runtime.setValue
+import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
+import androidx.compose.ui.draw.clip
+import androidx.compose.ui.graphics.Color
 import androidx.compose.ui.text.font.FontWeight
 import androidx.compose.ui.unit.dp
+import androidx.compose.ui.unit.sp
 import androidx.hilt.navigation.compose.hiltViewModel
-import java.text.DateFormat
-import java.util.Date
+import com.finance.manager.android.BuildConfig
+import com.finance.manager.android.presentation.components.FinanceDivider
+import com.finance.manager.android.ui.theme.OutlineVariant
+import com.finance.manager.android.ui.theme.extendedColors
 
-@OptIn(ExperimentalMaterial3Api::class)
 @Composable
 fun SettingsScreen(
     onOpenCurrencies: () -> Unit,
@@ -50,11 +57,9 @@ fun SettingsScreen(
 ) {
     val uiState by viewModel.uiState.collectAsState()
     val snackbarHostState = remember { SnackbarHostState() }
-    var pendingRestore by remember { mutableStateOf<BackupListItemUi?>(null) }
+    val ec = MaterialTheme.extendedColors
 
-    // 初始化資料庫：第 1 步確認（提示說明）
     var showResetStep1 by remember { mutableStateOf(false) }
-    // 初始化資料庫：第 2 步確認（最後警告）
     var showResetStep2 by remember { mutableStateOf(false) }
 
     LaunchedEffect(uiState.message) {
@@ -65,36 +70,9 @@ fun SettingsScreen(
     }
 
     Scaffold(
-        topBar = {
-            TopAppBar(
-                title = { Text("設定") },
-            )
-        },
         snackbarHost = { SnackbarHost(snackbarHostState) },
     ) { paddingValues ->
-        // ── 還原備份確認 Dialog ──
-        pendingRestore?.let { backup ->
-            AlertDialog(
-                onDismissRequest = { pendingRestore = null },
-                confirmButton = {
-                    TextButton(onClick = {
-                        pendingRestore = null
-                        viewModel.restoreDatabase(backup.toDomain())
-                    }) {
-                        Text("還原")
-                    }
-                },
-                dismissButton = {
-                    TextButton(onClick = { pendingRestore = null }) {
-                        Text("取消")
-                    }
-                },
-                title = { Text("還原備份") },
-                text = { Text("確定要還原 ${backup.name} 嗎？還原後請重新啟動 App。") },
-            )
-        }
-
-        // ── 初始化資料庫：第 1 步確認 Dialog ──
+        // Reset dialogs
         if (showResetStep1) {
             AlertDialog(
                 onDismissRequest = { showResetStep1 = false },
@@ -120,7 +98,7 @@ fun SettingsScreen(
                         Text("• 刪除所有交易記錄")
                         Text("• 刪除所有自訂分類、付款人、標籤")
                         Text("• 重設幣別設定")
-                        Spacer(modifier = Modifier.height(4.dp))
+                        Spacer(Modifier.height(4.dp))
                         Text(
                             "資料一旦清空將無法復原，請確認已備份重要資料。",
                             style = MaterialTheme.typography.bodyMedium.copy(fontWeight = FontWeight.Medium),
@@ -129,8 +107,6 @@ fun SettingsScreen(
                 },
             )
         }
-
-        // ── 初始化資料庫：第 2 步最終確認 Dialog ──
         if (showResetStep2) {
             AlertDialog(
                 onDismissRequest = { showResetStep2 = false },
@@ -145,7 +121,7 @@ fun SettingsScreen(
                             contentColor = MaterialTheme.colorScheme.onError,
                             disabledContainerColor = MaterialTheme.colorScheme.error.copy(alpha = 0.38f),
                             disabledContentColor = MaterialTheme.colorScheme.onError.copy(alpha = 0.38f),
-                        )
+                        ),
                     ) { Text("確認清空並初始化") }
                 },
                 dismissButton = {
@@ -159,10 +135,7 @@ fun SettingsScreen(
                     )
                 },
                 text = {
-                    Text(
-                        "您確定要清空所有資料並重新初始化資料庫嗎？\n\n此操作「無法復原」。",
-                        style = MaterialTheme.typography.bodyLarge,
-                    )
+                    Text("您確定要清空所有資料並重新初始化資料庫嗎？\n\n此操作「無法復原」。")
                 },
             )
         }
@@ -171,95 +144,106 @@ fun SettingsScreen(
             modifier = Modifier
                 .fillMaxSize()
                 .padding(paddingValues)
-                .padding(16.dp),
-            verticalArrangement = Arrangement.spacedBy(16.dp),
+                .background(MaterialTheme.colorScheme.surface),
         ) {
+            // Title
             item {
-                Column(verticalArrangement = Arrangement.spacedBy(16.dp)) {
-                    if (uiState.isBusy) {
-                        CircularProgressIndicator()
-                    }
-                    uiState.progressMessage?.let { Text(it) }
-                    Button(modifier = Modifier.fillMaxWidth(), onClick = onOpenCategories) {
-                        Text("類別管理")
-                    }
-                    Button(modifier = Modifier.fillMaxWidth(), onClick = onOpenPayees) {
-                        Text("付款人管理")
-                    }
-                    Button(modifier = Modifier.fillMaxWidth(), onClick = onOpenTags) {
-                        Text("標籤管理")
-                    }
-                    Button(modifier = Modifier.fillMaxWidth(), onClick = onOpenCurrencies) {
-                        Text("幣別管理")
-                    }
-                    Button(modifier = Modifier.fillMaxWidth(), onClick = viewModel::rebuildSnapshots) {
-                        Text("重建月結快照")
-                    }
-                    Button(modifier = Modifier.fillMaxWidth(), onClick = viewModel::backupDatabase) {
-                        Text("備份資料庫")
-                    }
-                    Spacer(modifier = Modifier.height(8.dp))
-                    Button(
-                        modifier = Modifier.fillMaxWidth(),
-                        onClick = { showResetStep1 = true },
-                        enabled = !uiState.isBusy,
-                        colors = ButtonDefaults.buttonColors(
-                            containerColor = MaterialTheme.colorScheme.error,
-                            contentColor = MaterialTheme.colorScheme.onError,
-                        ),
-                    ) {
-                        Text("初始化資料庫")
-                    }
-                    Text(
-                        "⚠ 將清空全部資料並還原初始狀態，無法復原",
-                        style = MaterialTheme.typography.labelSmall,
-                        color = MaterialTheme.colorScheme.error,
-                    )
-                    Text("可還原備份", modifier = Modifier.padding(top = 8.dp))
-                }
+                Text(
+                    "設定",
+                    style = MaterialTheme.typography.headlineSmall.copy(fontWeight = FontWeight.Bold),
+                    color = MaterialTheme.colorScheme.onSurface,
+                    modifier = Modifier.padding(start = 16.dp, top = 14.dp, bottom = 10.dp),
+                )
             }
 
-            if (uiState.backups.isEmpty()) {
+            // Loading indicator
+            if (uiState.isBusy) {
                 item {
-                    Text("目前沒有可用備份")
-                }
-            } else {
-                items(uiState.backups.map(::BackupListItemUi), key = { it.absolutePath }) { backup ->
-                    Card(modifier = Modifier.fillMaxWidth()) {
-                        Column(modifier = Modifier.padding(16.dp), verticalArrangement = Arrangement.spacedBy(8.dp)) {
-                            Text(backup.name)
-                            Text(backup.lastModifiedText)
-                            Button(
-                                modifier = Modifier.fillMaxWidth(),
-                                onClick = { pendingRestore = backup },
-                                enabled = !uiState.isBusy,
-                            ) {
-                                Text("還原這份備份")
-                            }
-                        }
+                    Row(
+                        modifier = Modifier
+                            .fillMaxWidth()
+                            .padding(horizontal = 16.dp, vertical = 8.dp),
+                        verticalAlignment = Alignment.CenterVertically,
+                        horizontalArrangement = Arrangement.spacedBy(8.dp),
+                    ) {
+                        CircularProgressIndicator(modifier = Modifier.size(20.dp))
+                        uiState.progressMessage?.let { Text(it, style = MaterialTheme.typography.bodySmall) }
                     }
                 }
             }
 
+            // ── 帳目管理 ──
             item {
-                Spacer(modifier = Modifier.height(8.dp))
-                HorizontalDivider()
+                SettingsGroup(
+                    title = "帳目管理",
+                    items = listOf(
+                        SettingsItemData("🏷️", "分類管理", arrow = true, onClick = onOpenCategories),
+                        SettingsItemData("👤", "付款人管理", arrow = true, onClick = onOpenPayees),
+                        SettingsItemData("🔖", "標籤管理", arrow = true, onClick = onOpenTags),
+                        SettingsItemData("💱", "幣別管理", arrow = true, onClick = onOpenCurrencies),
+                    ),
+                )
+            }
+
+            // ── 資料管理 ──
+            item {
+                SettingsGroup(
+                    title = "資料管理",
+                    items = listOf(
+                        SettingsItemData(
+                            "💾", "備份資料庫",
+                            arrow = true,
+                            onClick = { viewModel.backupDatabase() },
+                        ),
+                        SettingsItemData(
+                            "🔄", "重建月結快照",
+                            description = "資料修復用途",
+                            arrow = true,
+                            onClick = { viewModel.rebuildSnapshots() },
+                        ),
+                        SettingsItemData(
+                            "⚠️", "初始化資料庫",
+                            description = "清除所有資料",
+                            danger = true,
+                            arrow = true,
+                            onClick = { showResetStep1 = true },
+                        ),
+                    ),
+                )
+            }
+
+            // ── 關於 ──
+            item {
+                SettingsGroup(
+                    title = "關於",
+                    items = listOf(
+                        SettingsItemData(
+                            "ℹ️", "版本",
+                            description = "v${BuildConfig.VERSION_NAME} (build ${BuildConfig.VERSION_CODE})",
+                        ),
+                        SettingsItemData("📄", "開放原始碼授權", arrow = true),
+                    ),
+                )
+            }
+
+            // Footer
+            item {
                 Column(
                     modifier = Modifier
                         .fillMaxWidth()
                         .padding(vertical = 16.dp),
                     horizontalAlignment = Alignment.CenterHorizontally,
-                    verticalArrangement = Arrangement.spacedBy(4.dp),
                 ) {
                     Text(
-                        text = "PersonalAccounting",
-                        style = MaterialTheme.typography.labelMedium,
-                        color = MaterialTheme.colorScheme.onSurfaceVariant,
+                        "PersonalAccounting",
+                        style = MaterialTheme.typography.labelMedium.copy(fontWeight = FontWeight.Bold),
+                        color = MaterialTheme.colorScheme.primary,
                     )
+                    Spacer(Modifier.height(2.dp))
                     Text(
-                        text = "v${BuildConfig.VERSION_NAME}  (build ${BuildConfig.VERSION_CODE})",
+                        "個人財務管理系統 for Android",
                         style = MaterialTheme.typography.labelSmall,
-                        color = MaterialTheme.colorScheme.onSurfaceVariant,
+                        color = ec.onSurfaceVariant,
                     )
                 }
             }
@@ -267,24 +251,85 @@ fun SettingsScreen(
     }
 }
 
-private data class BackupListItemUi(
-    val name: String,
-    val absolutePath: String,
-    val lastModified: Long,
+private data class SettingsItemData(
+    val icon: String,
+    val label: String,
+    val description: String? = null,
+    val arrow: Boolean = false,
+    val danger: Boolean = false,
+    val onClick: (() -> Unit)? = null,
+)
+
+@Composable
+private fun SettingsGroup(
+    title: String,
+    items: List<SettingsItemData>,
 ) {
-    constructor(item: com.finance.manager.android.domain.usecase.backup.BackupFileItem) : this(
-        name = item.name,
-        absolutePath = item.absolutePath,
-        lastModified = item.lastModified,
-    )
-
-    val lastModifiedText: String
-        get() = "最後修改：${DateFormat.getDateTimeInstance().format(Date(lastModified))}"
-
-    fun toDomain() = com.finance.manager.android.domain.usecase.backup.BackupFileItem(
-        name = name,
-        absolutePath = absolutePath,
-        lastModified = lastModified,
-    )
+    val ec = MaterialTheme.extendedColors
+    Column(
+        modifier = Modifier
+            .fillMaxWidth()
+            .padding(horizontal = 16.dp)
+            .padding(bottom = 18.dp),
+    ) {
+        Text(
+            title.uppercase(),
+            style = MaterialTheme.typography.labelSmall,
+            color = ec.onSurfaceVariant,
+            letterSpacing = 1.sp,
+            modifier = Modifier.padding(bottom = 8.dp),
+        )
+        Column(
+            modifier = Modifier
+                .fillMaxWidth()
+                .clip(RoundedCornerShape(16.dp))
+                .background(Color.White)
+                .border(1.dp, OutlineVariant.copy(alpha = 0.4f), RoundedCornerShape(16.dp)),
+        ) {
+            items.forEachIndexed { index, item ->
+                Row(
+                    modifier = Modifier
+                        .fillMaxWidth()
+                        .then(
+                            if (item.onClick != null) Modifier.clickable(onClick = item.onClick)
+                            else Modifier
+                        )
+                        .padding(horizontal = 16.dp, vertical = 13.dp),
+                    verticalAlignment = Alignment.CenterVertically,
+                    horizontalArrangement = Arrangement.spacedBy(14.dp),
+                ) {
+                    Text(
+                        item.icon,
+                        fontSize = 20.sp,
+                        modifier = Modifier.width(28.dp),
+                    )
+                    Column(modifier = Modifier.weight(1f)) {
+                        Text(
+                            item.label,
+                            style = MaterialTheme.typography.bodyMedium.copy(fontWeight = FontWeight.Medium),
+                            color = if (item.danger) ec.danger else MaterialTheme.colorScheme.onSurface,
+                        )
+                        if (item.description != null) {
+                            Text(
+                                item.description,
+                                style = MaterialTheme.typography.labelSmall,
+                                color = ec.onSurfaceVariant,
+                            )
+                        }
+                    }
+                    if (item.arrow) {
+                        Icon(
+                            Icons.AutoMirrored.Filled.KeyboardArrowRight,
+                            contentDescription = null,
+                            modifier = Modifier.size(18.dp),
+                            tint = if (item.danger) ec.danger else OutlineVariant,
+                        )
+                    }
+                }
+                if (index < items.lastIndex) {
+                    FinanceDivider(horizontalPadding = 16.dp)
+                }
+            }
+        }
+    }
 }
-

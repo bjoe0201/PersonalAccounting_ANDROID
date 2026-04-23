@@ -1,23 +1,26 @@
 package com.finance.manager.android.presentation.account
 
+import androidx.compose.foundation.background
+import androidx.compose.foundation.border
+import androidx.compose.foundation.clickable
 import androidx.compose.foundation.layout.Arrangement
 import androidx.compose.foundation.layout.Box
 import androidx.compose.foundation.layout.Column
 import androidx.compose.foundation.layout.Row
+import androidx.compose.foundation.layout.Spacer
 import androidx.compose.foundation.layout.fillMaxSize
 import androidx.compose.foundation.layout.fillMaxWidth
+import androidx.compose.foundation.layout.height
 import androidx.compose.foundation.layout.padding
 import androidx.compose.foundation.layout.size
+import androidx.compose.foundation.layout.width
 import androidx.compose.foundation.lazy.LazyColumn
-import androidx.compose.foundation.lazy.items
-import androidx.compose.foundation.shape.CircleShape
-import androidx.compose.foundation.background
+import androidx.compose.foundation.shape.RoundedCornerShape
+import androidx.compose.material.icons.Icons
+import androidx.compose.material.icons.automirrored.filled.KeyboardArrowRight
 import androidx.compose.material3.AlertDialog
 import androidx.compose.material3.Button
-import androidx.compose.material3.Card
 import androidx.compose.material3.CircularProgressIndicator
-import androidx.compose.material3.ExperimentalMaterial3Api
-import androidx.compose.material3.ExtendedFloatingActionButton
 import androidx.compose.material3.Icon
 import androidx.compose.material3.MaterialTheme
 import androidx.compose.material3.Scaffold
@@ -25,7 +28,6 @@ import androidx.compose.material3.SnackbarHost
 import androidx.compose.material3.SnackbarHostState
 import androidx.compose.material3.Text
 import androidx.compose.material3.TextButton
-import androidx.compose.material3.TopAppBar
 import androidx.compose.runtime.Composable
 import androidx.compose.runtime.LaunchedEffect
 import androidx.compose.runtime.collectAsState
@@ -35,17 +37,30 @@ import androidx.compose.runtime.remember
 import androidx.compose.runtime.setValue
 import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
+import androidx.compose.ui.draw.clip
+import androidx.compose.ui.graphics.Brush
+import androidx.compose.ui.graphics.Color
+import androidx.compose.ui.text.font.FontWeight
 import androidx.compose.ui.unit.dp
-import com.finance.manager.android.domain.model.Account
+import androidx.compose.ui.unit.sp
 import androidx.hilt.navigation.compose.hiltViewModel
-import com.finance.manager.android.presentation.components.accountTypeIcon
+import com.finance.manager.android.domain.model.Account
+import com.finance.manager.android.domain.model.AccountType
+import com.finance.manager.android.presentation.components.AccountTypeIconCircle
+import com.finance.manager.android.presentation.components.FinanceChip
+import com.finance.manager.android.presentation.components.FinanceDivider
+import com.finance.manager.android.presentation.components.formatAmount
+import com.finance.manager.android.ui.theme.GradientEnd
+import com.finance.manager.android.ui.theme.GradientStart
+import com.finance.manager.android.ui.theme.OutlineVariant
+import com.finance.manager.android.ui.theme.extendedColors
 
-@OptIn(ExperimentalMaterial3Api::class)
 @Composable
 fun AccountListScreen(
     onCreateAccount: () -> Unit,
     onEditAccount: (Int) -> Unit,
     onOpenRegister: (Int) -> Unit,
+    onNavigateBack: () -> Unit = {},
     viewModel: AccountViewModel = hiltViewModel(),
 ) {
     val uiState by viewModel.uiState.collectAsState()
@@ -60,16 +75,6 @@ fun AccountListScreen(
     }
 
     Scaffold(
-        topBar = {
-            TopAppBar(title = { Text("帳戶管理") })
-        },
-        floatingActionButton = {
-            ExtendedFloatingActionButton(
-                onClick = onCreateAccount,
-            ) {
-                Text("新增帳戶")
-            }
-        },
         snackbarHost = { SnackbarHost(hostState = snackbarHostState) },
     ) { paddingValues ->
         pendingDeleteAccount?.let { account ->
@@ -79,14 +84,10 @@ fun AccountListScreen(
                     TextButton(onClick = {
                         pendingDeleteAccount = null
                         viewModel.deleteAccount(account.accountId)
-                    }) {
-                        Text("刪除")
-                    }
+                    }) { Text("刪除") }
                 },
                 dismissButton = {
-                    TextButton(onClick = { pendingDeleteAccount = null }) {
-                        Text("取消")
-                    }
+                    TextButton(onClick = { pendingDeleteAccount = null }) { Text("取消") }
                 },
                 title = { Text("刪除帳戶") },
                 text = { Text("確定要刪除「${account.accountName}」嗎？") },
@@ -95,15 +96,12 @@ fun AccountListScreen(
 
         when {
             uiState.isLoading -> {
-                Column(
+                Box(
                     modifier = Modifier
                         .fillMaxSize()
                         .padding(paddingValues),
-                    horizontalAlignment = Alignment.CenterHorizontally,
-                    verticalArrangement = Arrangement.Center,
-                ) {
-                    CircularProgressIndicator()
-                }
+                    contentAlignment = Alignment.Center,
+                ) { CircularProgressIndicator() }
             }
 
             uiState.accounts.isEmpty() -> {
@@ -120,27 +118,123 @@ fun AccountListScreen(
                     Button(
                         modifier = Modifier.padding(top = 16.dp),
                         onClick = onCreateAccount,
-                    ) {
-                        Text("建立帳戶")
-                    }
+                    ) { Text("建立帳戶") }
                 }
             }
 
             else -> {
+                val assetTypes = setOf(AccountType.Bank, AccountType.Cash, AccountType.Invst, AccountType.OthA)
+                val liabilityTypes = setOf(AccountType.CCard, AccountType.OthL)
+                val assetAccounts = uiState.accounts.filter { it.accountType in assetTypes }
+                val liabilityAccounts = uiState.accounts.filter { it.accountType in liabilityTypes }
+                val netAssets = uiState.accounts.sumOf { it.currentBalance }
+
                 LazyColumn(
                     modifier = Modifier
                         .fillMaxSize()
-                        .padding(paddingValues),
-                    verticalArrangement = Arrangement.spacedBy(12.dp),
+                        .padding(paddingValues)
+                        .background(MaterialTheme.colorScheme.surface),
                 ) {
-                    items(uiState.accounts, key = { it.accountId }) { account ->
-                        AccountCard(
-                            account = account,
-                            onEdit = { onEditAccount(account.accountId) },
-                            onOpenRegister = { onOpenRegister(account.accountId) },
-                            onDelete = { pendingDeleteAccount = account },
-                        )
+                    // TopBar
+                    item {
+                        Row(
+                            modifier = Modifier
+                                .fillMaxWidth()
+                                .padding(horizontal = 16.dp, vertical = 14.dp),
+                            horizontalArrangement = Arrangement.SpaceBetween,
+                            verticalAlignment = Alignment.CenterVertically,
+                        ) {
+                            Text(
+                                "帳戶管理",
+                                style = MaterialTheme.typography.headlineSmall.copy(fontWeight = FontWeight.Bold),
+                                color = MaterialTheme.colorScheme.onSurface,
+                            )
+                            Box(
+                                modifier = Modifier
+                                    .clip(RoundedCornerShape(20.dp))
+                                    .background(
+                                        brush = Brush.linearGradient(listOf(GradientStart, GradientEnd)),
+                                    )
+                                    .clickable(onClick = onCreateAccount)
+                                    .padding(horizontal = 14.dp, vertical = 6.dp),
+                            ) {
+                                Row(verticalAlignment = Alignment.CenterVertically) {
+                                    Text("+", fontSize = 16.sp, color = Color.White, lineHeight = 16.sp)
+                                    Spacer(Modifier.width(4.dp))
+                                    Text(
+                                        "新增帳戶",
+                                        style = MaterialTheme.typography.labelMedium,
+                                        color = Color.White,
+                                    )
+                                }
+                            }
+                        }
                     }
+
+                    // Asset accounts
+                    if (assetAccounts.isNotEmpty()) {
+                        item {
+                            AccountGroupSection(
+                                label = "資產帳戶",
+                                accounts = assetAccounts,
+                                onClickAccount = { onOpenRegister(it.accountId) },
+                            )
+                        }
+                    }
+
+                    // Liability accounts
+                    if (liabilityAccounts.isNotEmpty()) {
+                        item {
+                            AccountGroupSection(
+                                label = "負債帳戶",
+                                accounts = liabilityAccounts,
+                                onClickAccount = { onOpenRegister(it.accountId) },
+                            )
+                        }
+                    }
+
+                    // Net asset summary
+                    item {
+                        Box(
+                            modifier = Modifier
+                                .fillMaxWidth()
+                                .padding(horizontal = 16.dp, vertical = 8.dp)
+                                .clip(RoundedCornerShape(14.dp))
+                                .background(
+                                    brush = Brush.linearGradient(
+                                        listOf(
+                                            GradientStart.copy(alpha = 0.08f),
+                                            GradientEnd.copy(alpha = 0.12f),
+                                        ),
+                                    ),
+                                )
+                                .border(
+                                    1.dp,
+                                    MaterialTheme.colorScheme.primary.copy(alpha = 0.15f),
+                                    RoundedCornerShape(14.dp),
+                                )
+                                .padding(horizontal = 16.dp, vertical = 14.dp),
+                        ) {
+                            Row(
+                                modifier = Modifier.fillMaxWidth(),
+                                horizontalArrangement = Arrangement.SpaceBetween,
+                                verticalAlignment = Alignment.CenterVertically,
+                            ) {
+                                Text(
+                                    "總淨資產",
+                                    style = MaterialTheme.typography.labelMedium,
+                                    color = MaterialTheme.colorScheme.primary,
+                                )
+                                Text(
+                                    "T\$${formatAmount(netAssets)}",
+                                    style = MaterialTheme.typography.titleLarge.copy(fontWeight = FontWeight.Bold),
+                                    color = MaterialTheme.colorScheme.primary,
+                                )
+                            }
+                        }
+                    }
+
+                    item { Spacer(Modifier.height(16.dp)) }
                 }
             }
         }
@@ -148,68 +242,76 @@ fun AccountListScreen(
 }
 
 @Composable
-private fun AccountCard(
-    account: Account,
-    onEdit: () -> Unit,
-    onOpenRegister: () -> Unit,
-    onDelete: () -> Unit,
+private fun AccountGroupSection(
+    label: String,
+    accounts: List<Account>,
+    onClickAccount: (Account) -> Unit,
 ) {
-    Card(
+    val ec = MaterialTheme.extendedColors
+    Column(
         modifier = Modifier
             .fillMaxWidth()
-            .padding(horizontal = 16.dp),
+            .padding(horizontal = 16.dp)
+            .padding(bottom = 16.dp),
     ) {
-        Column(modifier = Modifier.padding(16.dp)) {
-            Row(
-                modifier = Modifier.fillMaxWidth(),
-                horizontalArrangement = Arrangement.SpaceBetween,
-                verticalAlignment = Alignment.CenterVertically,
-            ) {
-                Row(modifier = Modifier.weight(1f), verticalAlignment = Alignment.CenterVertically) {
-                    Box(
-                        modifier = Modifier
-                            .size(36.dp)
-                            .background(MaterialTheme.colorScheme.primaryContainer, CircleShape),
-                        contentAlignment = Alignment.Center,
-                    ) {
-                        Icon(
-                            imageVector = accountTypeIcon(account.accountType),
-                            contentDescription = account.accountType.displayName,
-                            tint = MaterialTheme.colorScheme.primary,
-                            modifier = Modifier.size(20.dp),
+        Text(
+            label.uppercase(),
+            style = MaterialTheme.typography.labelSmall,
+            color = ec.onSurfaceVariant,
+            letterSpacing = 1.sp,
+            modifier = Modifier.padding(bottom = 8.dp),
+        )
+        Column(
+            modifier = Modifier
+                .fillMaxWidth()
+                .clip(RoundedCornerShape(16.dp))
+                .background(Color.White)
+                .border(1.dp, OutlineVariant.copy(alpha = 0.4f), RoundedCornerShape(16.dp)),
+        ) {
+            accounts.forEachIndexed { index, account ->
+                Row(
+                    modifier = Modifier
+                        .fillMaxWidth()
+                        .clickable { onClickAccount(account) }
+                        .padding(horizontal = 16.dp, vertical = 14.dp),
+                    verticalAlignment = Alignment.CenterVertically,
+                    horizontalArrangement = Arrangement.spacedBy(12.dp),
+                ) {
+                    AccountTypeIconCircle(type = account.accountType, size = 42.dp)
+
+                    Column(modifier = Modifier.weight(1f)) {
+                        Text(
+                            account.accountName,
+                            style = MaterialTheme.typography.bodyMedium.copy(fontWeight = FontWeight.SemiBold),
+                            color = MaterialTheme.colorScheme.onSurface,
+                        )
+                        FinanceChip(
+                            label = account.accountType.displayName,
+                            color = ec.onSurfaceVariant,
+                            backgroundColor = MaterialTheme.colorScheme.surfaceVariant,
                         )
                     }
-                    Column(modifier = Modifier.padding(start = 12.dp)) {
-                        Text(account.accountName, style = MaterialTheme.typography.titleMedium)
-                        Text(account.accountType.displayName, style = MaterialTheme.typography.bodyMedium)
-                        if (account.isHidden) {
-                            Text("已隱藏", color = MaterialTheme.colorScheme.primary)
-                        }
+
+                    Row(verticalAlignment = Alignment.CenterVertically) {
+                        Text(
+                            "${if (account.currentBalance < 0) "-" else ""}T\$${formatAmount(account.currentBalance)}",
+                            style = MaterialTheme.typography.bodyMedium.copy(fontWeight = FontWeight.Bold),
+                            color = if (account.currentBalance < 0) ec.expenseRed
+                            else MaterialTheme.colorScheme.onSurface,
+                        )
+                        Spacer(Modifier.width(6.dp))
+                        Icon(
+                            Icons.AutoMirrored.Filled.KeyboardArrowRight,
+                            contentDescription = null,
+                            modifier = Modifier.size(18.dp),
+                            tint = OutlineVariant,
+                        )
                     }
                 }
-                Text(
-                    text = String.format("%.2f", account.currentBalance),
-                    style = MaterialTheme.typography.titleMedium,
-                )
-            }
-            Row(
-                modifier = Modifier.fillMaxWidth(),
-                horizontalArrangement = Arrangement.End,
-            ) {
-                TextButton(onClick = onEdit) {
-                    Text("編輯")
-                }
-                TextButton(onClick = onOpenRegister) {
-                    Text("登記簿")
-                }
-                TextButton(onClick = onDelete) {
-                    Text("刪除")
+                if (index < accounts.lastIndex) {
+                    FinanceDivider(horizontalPadding = 16.dp)
                 }
             }
         }
     }
 }
-
-
-
-

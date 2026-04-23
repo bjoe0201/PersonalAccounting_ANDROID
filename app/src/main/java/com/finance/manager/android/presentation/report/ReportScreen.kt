@@ -1,6 +1,9 @@
 package com.finance.manager.android.presentation.report
 
 import androidx.compose.foundation.Canvas
+import androidx.compose.foundation.background
+import androidx.compose.foundation.border
+import androidx.compose.foundation.clickable
 import androidx.compose.foundation.layout.Arrangement
 import androidx.compose.foundation.layout.Box
 import androidx.compose.foundation.layout.Column
@@ -10,74 +13,110 @@ import androidx.compose.foundation.layout.fillMaxSize
 import androidx.compose.foundation.layout.fillMaxWidth
 import androidx.compose.foundation.layout.height
 import androidx.compose.foundation.layout.padding
+import androidx.compose.foundation.layout.size
+import androidx.compose.foundation.layout.width
 import androidx.compose.foundation.lazy.LazyColumn
 import androidx.compose.foundation.lazy.items
-import androidx.compose.material3.Button
+import androidx.compose.foundation.lazy.itemsIndexed
+import androidx.compose.foundation.shape.CircleShape
+import androidx.compose.foundation.shape.RoundedCornerShape
 import androidx.compose.material3.CircularProgressIndicator
-import androidx.compose.material3.ExperimentalMaterial3Api
-import androidx.compose.material3.HorizontalDivider
+import androidx.compose.material3.IconButton
 import androidx.compose.material3.MaterialTheme
-import androidx.compose.material3.Scaffold
-import androidx.compose.material3.Tab
-import androidx.compose.material3.TabRow
 import androidx.compose.material3.Text
-import androidx.compose.material3.TopAppBar
 import androidx.compose.runtime.Composable
 import androidx.compose.runtime.collectAsState
 import androidx.compose.runtime.getValue
 import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
+import androidx.compose.ui.draw.clip
 import androidx.compose.ui.geometry.Offset
 import androidx.compose.ui.geometry.Size
 import androidx.compose.ui.graphics.Color
+import androidx.compose.ui.graphics.StrokeCap
+import androidx.compose.ui.graphics.drawscope.Stroke
+import androidx.compose.ui.text.font.FontWeight
+import androidx.compose.ui.text.style.TextAlign
 import androidx.compose.ui.unit.dp
+import androidx.compose.ui.unit.sp
 import androidx.hilt.navigation.compose.hiltViewModel
 import com.finance.manager.android.domain.model.CategoryAmount
 import com.finance.manager.android.domain.model.MonthlySnapshot
-import com.finance.manager.android.domain.model.YearlyReport
+import com.finance.manager.android.presentation.components.FinanceDivider
+import com.finance.manager.android.presentation.components.formatAmount
+import com.finance.manager.android.ui.theme.OutlineVariant
+import com.finance.manager.android.ui.theme.extendedColors
 
-private val ChartColors = listOf(
-    Color(0xFF006D77), Color(0xFF4ECDC4), Color(0xFFFF6B6B),
-    Color(0xFFFFE66D), Color(0xFF95E1D3), Color(0xFFF38181),
-    Color(0xFFA8D8EA), Color(0xFFAA96DA), Color(0xFFFCBFBD),
+private val CHART_COLORS = listOf(
+    Color(0xFF1565C0), Color(0xFFFF8F00), Color(0xFF2E7D32),
+    Color(0xFF6A1B9A), Color(0xFFC62828), Color(0xFF546E7A),
+    Color(0xFF00838F), Color(0xFFAD1457), Color(0xFF4E342E),
 )
 
-@OptIn(ExperimentalMaterial3Api::class)
 @Composable
 fun ReportScreen(
     viewModel: ReportViewModel = hiltViewModel(),
 ) {
     val uiState by viewModel.uiState.collectAsState()
-    val tabs = listOf("月報", "年報", "趨勢")
+    val ec = MaterialTheme.extendedColors
+    val tabs = listOf(
+        ReportTab.MONTHLY to "月報",
+        ReportTab.YEARLY to "年報",
+        ReportTab.TREND to "趨勢",
+    )
 
-    Scaffold(
-        topBar = {
-            TopAppBar(
-                title = { Text("報表") },
-            )
-        },
-    ) { paddingValues ->
-        Column(modifier = Modifier.fillMaxSize().padding(paddingValues)) {
-            TabRow(selectedTabIndex = uiState.activeTab.ordinal) {
-                tabs.forEachIndexed { index, title ->
-                    Tab(
-                        selected = uiState.activeTab.ordinal == index,
-                        onClick = { viewModel.selectTab(ReportTab.entries[index]) },
-                        text = { Text(title) },
+    Column(
+        modifier = Modifier
+            .fillMaxSize()
+            .background(MaterialTheme.colorScheme.surface),
+    ) {
+        // Title
+        Text(
+            "報表分析",
+            style = MaterialTheme.typography.headlineSmall.copy(fontWeight = FontWeight.Bold),
+            color = MaterialTheme.colorScheme.onSurface,
+            modifier = Modifier.padding(start = 16.dp, top = 14.dp),
+        )
+
+        // Tabs (pill style)
+        Row(
+            modifier = Modifier
+                .fillMaxWidth()
+                .padding(horizontal = 16.dp, vertical = 10.dp),
+            horizontalArrangement = Arrangement.spacedBy(4.dp),
+        ) {
+            tabs.forEach { (tab, label) ->
+                val isSelected = uiState.activeTab == tab
+                Box(
+                    modifier = Modifier
+                        .weight(1f)
+                        .clip(RoundedCornerShape(10.dp))
+                        .background(
+                            if (isSelected) MaterialTheme.colorScheme.primary
+                            else MaterialTheme.colorScheme.surfaceVariant,
+                        )
+                        .clickable { viewModel.selectTab(tab) }
+                        .padding(vertical = 8.dp),
+                    contentAlignment = Alignment.Center,
+                ) {
+                    Text(
+                        label,
+                        style = MaterialTheme.typography.labelMedium,
+                        color = if (isSelected) Color.White else ec.onSurfaceVariant,
                     )
                 }
             }
+        }
 
-            if (uiState.isLoading) {
-                Box(modifier = Modifier.fillMaxSize(), contentAlignment = Alignment.Center) {
-                    CircularProgressIndicator()
-                }
-            } else {
-                when (uiState.activeTab) {
-                    ReportTab.MONTHLY -> MonthlyTabContent(uiState, viewModel)
-                    ReportTab.YEARLY -> YearlyTabContent(uiState, viewModel)
-                    ReportTab.TREND -> TrendTabContent(uiState, viewModel)
-                }
+        if (uiState.isLoading) {
+            Box(modifier = Modifier.fillMaxSize(), contentAlignment = Alignment.Center) {
+                CircularProgressIndicator()
+            }
+        } else {
+            when (uiState.activeTab) {
+                ReportTab.MONTHLY -> MonthlyTabContent(uiState, viewModel)
+                ReportTab.YEARLY -> YearlyTabContent(uiState, viewModel)
+                ReportTab.TREND -> TrendTabContent(uiState, viewModel)
             }
         }
     }
@@ -86,55 +125,324 @@ fun ReportScreen(
 @Composable
 private fun MonthlyTabContent(uiState: ReportUiState, viewModel: ReportViewModel) {
     val summary = uiState.monthlySummary
+    val ec = MaterialTheme.extendedColors
+    val totalExpense = kotlin.math.abs(summary?.totalExpense ?: 0.0)
+    val totalIncome = summary?.totalIncome ?: 0.0
+    val balance = totalIncome - totalExpense
+
     LazyColumn(
-        modifier = Modifier.fillMaxSize().padding(16.dp),
-        verticalArrangement = Arrangement.spacedBy(12.dp),
+        modifier = Modifier
+            .fillMaxSize()
+            .padding(horizontal = 16.dp),
+        verticalArrangement = Arrangement.spacedBy(14.dp),
     ) {
+        // Month selector
         item {
             Row(
                 modifier = Modifier.fillMaxWidth(),
                 horizontalArrangement = Arrangement.SpaceBetween,
                 verticalAlignment = Alignment.CenterVertically,
             ) {
-                Button(onClick = viewModel::previousMonth) { Text("上月") }
+                Box(
+                    modifier = Modifier
+                        .clip(RoundedCornerShape(8.dp))
+                        .background(MaterialTheme.colorScheme.surfaceVariant)
+                        .clickable { viewModel.previousMonth() }
+                        .padding(horizontal = 10.dp, vertical = 6.dp),
+                ) { Text("◀", style = MaterialTheme.typography.labelMedium) }
+
                 Text(
-                    "${uiState.month.year}-${String.format("%02d", uiState.month.monthValue)}",
-                    style = MaterialTheme.typography.titleLarge,
+                    "${uiState.month.year} 年 ${uiState.month.monthValue} 月",
+                    style = MaterialTheme.typography.titleLarge.copy(fontWeight = FontWeight.SemiBold),
+                    color = MaterialTheme.colorScheme.onSurface,
                 )
-                Button(onClick = viewModel::nextMonth) { Text("下月") }
+
+                Box(
+                    modifier = Modifier
+                        .clip(RoundedCornerShape(8.dp))
+                        .background(MaterialTheme.colorScheme.surfaceVariant)
+                        .clickable { viewModel.nextMonth() }
+                        .padding(horizontal = 10.dp, vertical = 6.dp),
+                ) { Text("▶", style = MaterialTheme.typography.labelMedium) }
             }
         }
+
+        // Summary cards (income + expense)
         item {
-            Column(verticalArrangement = Arrangement.spacedBy(4.dp)) {
-                Text("收入：${String.format("%.2f", summary?.totalIncome ?: 0.0)}")
-                Text("支出：${String.format("%.2f", summary?.totalExpense ?: 0.0)}")
-                Text("月末餘額：${String.format("%.2f", summary?.endBalance ?: 0.0)}")
-            }
-        }
-        val breakdown = summary?.categoryBreakdown.orEmpty()
-        if (breakdown.isNotEmpty()) {
-            item {
-                Spacer(Modifier.height(8.dp))
-                ExpensePieChart(breakdown = breakdown, modifier = Modifier.fillMaxWidth().height(200.dp))
-            }
-            item {
-                HorizontalDivider()
-                Text("支出分類明細", style = MaterialTheme.typography.titleMedium, modifier = Modifier.padding(top = 4.dp))
-            }
-            items(breakdown, key = { it.categoryId }) { cat ->
-                Row(modifier = Modifier.fillMaxWidth(), horizontalArrangement = Arrangement.SpaceBetween) {
-                    Column(modifier = Modifier.weight(1f)) {
-                        Text(cat.categoryName, style = MaterialTheme.typography.bodyMedium)
-                        if (cat.parentCategoryName != null) {
-                            Text(cat.parentCategoryName, style = MaterialTheme.typography.bodySmall)
-                        }
+            Row(
+                modifier = Modifier.fillMaxWidth(),
+                horizontalArrangement = Arrangement.spacedBy(10.dp),
+            ) {
+                Box(
+                    modifier = Modifier
+                        .weight(1f)
+                        .clip(RoundedCornerShape(14.dp))
+                        .background(ec.incomeGreenLight)
+                        .padding(horizontal = 14.dp, vertical = 12.dp),
+                ) {
+                    Column {
+                        Text(
+                            "收入",
+                            style = MaterialTheme.typography.labelSmall,
+                            color = ec.incomeGreen,
+                        )
+                        Spacer(Modifier.height(4.dp))
+                        Text(
+                            "+T\$${formatAmount(totalIncome)}",
+                            style = MaterialTheme.typography.titleLarge.copy(fontWeight = FontWeight.Bold),
+                            color = ec.incomeGreen,
+                        )
                     }
-                    Column(horizontalAlignment = Alignment.End) {
-                        Text(String.format("%.2f", cat.amount), style = MaterialTheme.typography.bodyMedium)
-                        Text(String.format("%.1f%%", kotlin.math.abs(cat.percentage)), style = MaterialTheme.typography.bodySmall)
+                }
+                Box(
+                    modifier = Modifier
+                        .weight(1f)
+                        .clip(RoundedCornerShape(14.dp))
+                        .background(ec.expenseRedLight)
+                        .padding(horizontal = 14.dp, vertical = 12.dp),
+                ) {
+                    Column {
+                        Text(
+                            "支出",
+                            style = MaterialTheme.typography.labelSmall,
+                            color = ec.expenseRed,
+                        )
+                        Spacer(Modifier.height(4.dp))
+                        Text(
+                            "-T\$${formatAmount(totalExpense)}",
+                            style = MaterialTheme.typography.titleLarge.copy(fontWeight = FontWeight.Bold),
+                            color = ec.expenseRed,
+                        )
                     }
                 }
             }
+        }
+
+        // Balance card
+        item {
+            Box(
+                modifier = Modifier
+                    .fillMaxWidth()
+                    .clip(RoundedCornerShape(14.dp))
+                    .background(ec.surfaceElevated)
+                    .padding(horizontal = 14.dp, vertical = 10.dp),
+            ) {
+                Row(
+                    modifier = Modifier.fillMaxWidth(),
+                    horizontalArrangement = Arrangement.SpaceBetween,
+                ) {
+                    Text(
+                        "本月結餘",
+                        style = MaterialTheme.typography.labelMedium,
+                        color = ec.onSurfaceVariant,
+                    )
+                    Text(
+                        "${if (balance >= 0) "+" else "-"}T\$${formatAmount(balance)}",
+                        style = MaterialTheme.typography.bodyMedium.copy(fontWeight = FontWeight.Bold),
+                        color = if (balance >= 0) ec.incomeGreen else ec.expenseRed,
+                    )
+                }
+            }
+        }
+
+        // Donut chart + legend
+        val breakdown = summary?.categoryBreakdown.orEmpty()
+        if (breakdown.isNotEmpty()) {
+            item {
+                Column(
+                    modifier = Modifier
+                        .fillMaxWidth()
+                        .clip(RoundedCornerShape(16.dp))
+                        .background(Color.White)
+                        .border(1.dp, OutlineVariant.copy(alpha = 0.4f), RoundedCornerShape(16.dp))
+                        .padding(16.dp),
+                ) {
+                    Text(
+                        "支出分佈",
+                        style = MaterialTheme.typography.labelMedium,
+                        color = ec.onSurfaceVariant,
+                    )
+                    Spacer(Modifier.height(12.dp))
+                    Row(
+                        modifier = Modifier.fillMaxWidth(),
+                        verticalAlignment = Alignment.CenterVertically,
+                        horizontalArrangement = Arrangement.spacedBy(16.dp),
+                    ) {
+                        DonutChart(
+                            breakdown = breakdown,
+                            totalExpense = totalExpense,
+                            modifier = Modifier.size(160.dp),
+                        )
+                        Column(
+                            modifier = Modifier.weight(1f),
+                            verticalArrangement = Arrangement.spacedBy(7.dp),
+                        ) {
+                            breakdown.forEachIndexed { idx, cat ->
+                                Row(
+                                    verticalAlignment = Alignment.CenterVertically,
+                                    horizontalArrangement = Arrangement.spacedBy(8.dp),
+                                ) {
+                                    Box(
+                                        modifier = Modifier
+                                            .size(10.dp)
+                                            .background(
+                                                CHART_COLORS[idx % CHART_COLORS.size],
+                                                CircleShape,
+                                            ),
+                                    )
+                                    Text(
+                                        cat.categoryName,
+                                        style = MaterialTheme.typography.labelMedium,
+                                        color = MaterialTheme.colorScheme.onSurface,
+                                        modifier = Modifier.weight(1f),
+                                    )
+                                    Text(
+                                        "${kotlin.math.abs(cat.percentage).toInt()}%",
+                                        style = MaterialTheme.typography.labelSmall,
+                                        color = ec.onSurfaceVariant,
+                                    )
+                                }
+                            }
+                        }
+                    }
+                }
+            }
+
+            // Category breakdown list
+            item {
+                Text(
+                    "分類明細",
+                    style = MaterialTheme.typography.labelMedium,
+                    color = ec.onSurfaceVariant,
+                )
+            }
+
+            item {
+                Column(
+                    modifier = Modifier
+                        .fillMaxWidth()
+                        .clip(RoundedCornerShape(16.dp))
+                        .background(Color.White)
+                        .border(1.dp, OutlineVariant.copy(alpha = 0.4f), RoundedCornerShape(16.dp)),
+                ) {
+                    breakdown.forEachIndexed { idx, cat ->
+                        Row(
+                            modifier = Modifier
+                                .fillMaxWidth()
+                                .padding(horizontal = 14.dp, vertical = 12.dp),
+                            verticalAlignment = Alignment.CenterVertically,
+                            horizontalArrangement = Arrangement.spacedBy(12.dp),
+                        ) {
+                            Box(
+                                modifier = Modifier
+                                    .size(10.dp)
+                                    .background(
+                                        CHART_COLORS[idx % CHART_COLORS.size],
+                                        CircleShape,
+                                    ),
+                            )
+                            Column(modifier = Modifier.weight(1f)) {
+                                Row(
+                                    modifier = Modifier.fillMaxWidth(),
+                                    horizontalArrangement = Arrangement.SpaceBetween,
+                                ) {
+                                    Text(
+                                        cat.categoryName,
+                                        style = MaterialTheme.typography.bodyMedium.copy(fontWeight = FontWeight.Medium),
+                                        color = MaterialTheme.colorScheme.onSurface,
+                                    )
+                                    Text(
+                                        "T\$${formatAmount(cat.amount)}",
+                                        style = MaterialTheme.typography.bodyMedium.copy(fontWeight = FontWeight.Bold),
+                                        color = ec.expenseRed,
+                                    )
+                                }
+                                Spacer(Modifier.height(4.dp))
+                                // Progress bar
+                                Box(
+                                    modifier = Modifier
+                                        .fillMaxWidth()
+                                        .height(4.dp)
+                                        .clip(RoundedCornerShape(4.dp))
+                                        .background(MaterialTheme.colorScheme.surfaceVariant),
+                                ) {
+                                    val pct = kotlin.math.abs(cat.percentage).toFloat()
+                                        .coerceIn(0f, 100f) / 100f
+                                    Box(
+                                        modifier = Modifier
+                                            .fillMaxWidth(pct)
+                                            .height(4.dp)
+                                            .clip(RoundedCornerShape(4.dp))
+                                            .background(CHART_COLORS[idx % CHART_COLORS.size]),
+                                    )
+                                }
+                            }
+                            Text(
+                                "${kotlin.math.abs(cat.percentage).toInt()}%",
+                                style = MaterialTheme.typography.labelMedium,
+                                color = ec.onSurfaceVariant,
+                                modifier = Modifier.width(32.dp),
+                                textAlign = TextAlign.End,
+                            )
+                        }
+                        if (idx < breakdown.lastIndex) {
+                            FinanceDivider(horizontalPadding = 14.dp)
+                        }
+                    }
+                }
+            }
+        }
+
+        item { Spacer(Modifier.height(8.dp)) }
+    }
+}
+
+@Composable
+private fun DonutChart(
+    breakdown: List<CategoryAmount>,
+    totalExpense: Double,
+    modifier: Modifier = Modifier,
+) {
+    val ec = MaterialTheme.extendedColors
+    Box(modifier = modifier, contentAlignment = Alignment.Center) {
+        Canvas(modifier = Modifier.fillMaxSize()) {
+            val strokeWidth = 22.dp.toPx()
+            val diameter = minOf(size.width, size.height) - strokeWidth
+            val topLeft = Offset(
+                (size.width - diameter) / 2f,
+                (size.height - diameter) / 2f,
+            )
+            val arcSize = Size(diameter, diameter)
+            var startAngle = -90f
+
+            breakdown.forEachIndexed { idx, cat ->
+                val sweep = (kotlin.math.abs(cat.percentage) / 100.0 * 360.0).toFloat()
+                drawArc(
+                    color = CHART_COLORS[idx % CHART_COLORS.size],
+                    startAngle = startAngle,
+                    sweepAngle = sweep,
+                    useCenter = false,
+                    topLeft = topLeft,
+                    size = arcSize,
+                    style = Stroke(width = strokeWidth, cap = StrokeCap.Butt),
+                )
+                startAngle += sweep
+            }
+        }
+        // Center text
+        Column(horizontalAlignment = Alignment.CenterHorizontally) {
+            Text(
+                "總支出",
+                fontSize = 11.sp,
+                fontWeight = FontWeight.Medium,
+                color = ec.onSurfaceVariant,
+            )
+            Text(
+                "T\$${formatAmount(totalExpense)}",
+                fontSize = 16.sp,
+                fontWeight = FontWeight.Bold,
+                color = MaterialTheme.colorScheme.onSurface,
+            )
         }
     }
 }
@@ -142,8 +450,11 @@ private fun MonthlyTabContent(uiState: ReportUiState, viewModel: ReportViewModel
 @Composable
 private fun YearlyTabContent(uiState: ReportUiState, viewModel: ReportViewModel) {
     val report = uiState.yearlyReport
+    val ec = MaterialTheme.extendedColors
     LazyColumn(
-        modifier = Modifier.fillMaxSize().padding(16.dp),
+        modifier = Modifier
+            .fillMaxSize()
+            .padding(16.dp),
         verticalArrangement = Arrangement.spacedBy(12.dp),
     ) {
         item {
@@ -152,41 +463,110 @@ private fun YearlyTabContent(uiState: ReportUiState, viewModel: ReportViewModel)
                 horizontalArrangement = Arrangement.SpaceBetween,
                 verticalAlignment = Alignment.CenterVertically,
             ) {
-                Button(onClick = viewModel::previousYear) { Text("上年") }
-                Text("${uiState.year} 年", style = MaterialTheme.typography.titleLarge)
-                Button(onClick = viewModel::nextYear) { Text("下年") }
+                Box(
+                    modifier = Modifier
+                        .clip(RoundedCornerShape(8.dp))
+                        .background(MaterialTheme.colorScheme.surfaceVariant)
+                        .clickable { viewModel.previousYear() }
+                        .padding(horizontal = 10.dp, vertical = 6.dp),
+                ) { Text("◀", style = MaterialTheme.typography.labelMedium) }
+                Text(
+                    "${uiState.year} 年",
+                    style = MaterialTheme.typography.titleLarge.copy(fontWeight = FontWeight.SemiBold),
+                )
+                Box(
+                    modifier = Modifier
+                        .clip(RoundedCornerShape(8.dp))
+                        .background(MaterialTheme.colorScheme.surfaceVariant)
+                        .clickable { viewModel.nextYear() }
+                        .padding(horizontal = 10.dp, vertical = 6.dp),
+                ) { Text("▶", style = MaterialTheme.typography.labelMedium) }
             }
         }
         item {
-            Column(verticalArrangement = Arrangement.spacedBy(4.dp)) {
-                Text("年度總收入：${String.format("%.2f", report?.totalIncome ?: 0.0)}")
-                Text("年度總支出：${String.format("%.2f", report?.totalExpense ?: 0.0)}")
+            Row(
+                modifier = Modifier.fillMaxWidth(),
+                horizontalArrangement = Arrangement.spacedBy(10.dp),
+            ) {
+                Box(
+                    modifier = Modifier
+                        .weight(1f)
+                        .clip(RoundedCornerShape(14.dp))
+                        .background(ec.incomeGreenLight)
+                        .padding(horizontal = 14.dp, vertical = 12.dp),
+                ) {
+                    Column {
+                        Text("年度收入", style = MaterialTheme.typography.labelSmall, color = ec.incomeGreen)
+                        Spacer(Modifier.height(4.dp))
+                        Text(
+                            "+T\$${formatAmount(report?.totalIncome ?: 0.0)}",
+                            style = MaterialTheme.typography.titleMedium.copy(fontWeight = FontWeight.Bold),
+                            color = ec.incomeGreen,
+                        )
+                    }
+                }
+                Box(
+                    modifier = Modifier
+                        .weight(1f)
+                        .clip(RoundedCornerShape(14.dp))
+                        .background(ec.expenseRedLight)
+                        .padding(horizontal = 14.dp, vertical = 12.dp),
+                ) {
+                    Column {
+                        Text("年度支出", style = MaterialTheme.typography.labelSmall, color = ec.expenseRed)
+                        Spacer(Modifier.height(4.dp))
+                        Text(
+                            "-T\$${formatAmount(kotlin.math.abs(report?.totalExpense ?: 0.0))}",
+                            style = MaterialTheme.typography.titleMedium.copy(fontWeight = FontWeight.Bold),
+                            color = ec.expenseRed,
+                        )
+                    }
+                }
             }
         }
         val monthlyData = report?.monthlyData.orEmpty()
         if (monthlyData.isNotEmpty()) {
             item {
-                Spacer(Modifier.height(8.dp))
                 IncomeExpenseBarChart(
                     monthlyData = monthlyData,
-                    modifier = Modifier.fillMaxWidth().height(200.dp),
+                    modifier = Modifier
+                        .fillMaxWidth()
+                        .height(200.dp),
                 )
             }
-            item { HorizontalDivider() }
+            // Monthly table
             item {
-                Row(modifier = Modifier.fillMaxWidth(), horizontalArrangement = Arrangement.SpaceBetween) {
-                    Text("月份", style = MaterialTheme.typography.labelMedium, modifier = Modifier.weight(1f))
-                    Text("收入", style = MaterialTheme.typography.labelMedium, modifier = Modifier.weight(1f))
-                    Text("支出", style = MaterialTheme.typography.labelMedium, modifier = Modifier.weight(1f))
-                    Text("餘額", style = MaterialTheme.typography.labelMedium, modifier = Modifier.weight(1f))
-                }
-            }
-            items(monthlyData, key = { it.month }) { snap ->
-                Row(modifier = Modifier.fillMaxWidth(), horizontalArrangement = Arrangement.SpaceBetween) {
-                    Text("${snap.month}月", style = MaterialTheme.typography.bodySmall, modifier = Modifier.weight(1f))
-                    Text(String.format("%.0f", snap.income), style = MaterialTheme.typography.bodySmall, modifier = Modifier.weight(1f))
-                    Text(String.format("%.0f", snap.expense), style = MaterialTheme.typography.bodySmall, modifier = Modifier.weight(1f))
-                    Text(String.format("%.0f", snap.balance), style = MaterialTheme.typography.bodySmall, modifier = Modifier.weight(1f))
+                Column(
+                    modifier = Modifier
+                        .fillMaxWidth()
+                        .clip(RoundedCornerShape(16.dp))
+                        .background(Color.White)
+                        .border(1.dp, OutlineVariant.copy(alpha = 0.4f), RoundedCornerShape(16.dp))
+                        .padding(vertical = 8.dp),
+                ) {
+                    Row(
+                        modifier = Modifier
+                            .fillMaxWidth()
+                            .padding(horizontal = 14.dp, vertical = 6.dp),
+                    ) {
+                        Text("月份", style = MaterialTheme.typography.labelSmall, color = ec.onSurfaceVariant, modifier = Modifier.weight(1f))
+                        Text("收入", style = MaterialTheme.typography.labelSmall, color = ec.onSurfaceVariant, modifier = Modifier.weight(1f), textAlign = TextAlign.End)
+                        Text("支出", style = MaterialTheme.typography.labelSmall, color = ec.onSurfaceVariant, modifier = Modifier.weight(1f), textAlign = TextAlign.End)
+                        Text("餘額", style = MaterialTheme.typography.labelSmall, color = ec.onSurfaceVariant, modifier = Modifier.weight(1f), textAlign = TextAlign.End)
+                    }
+                    FinanceDivider(horizontalPadding = 14.dp)
+                    monthlyData.forEach { snap ->
+                        Row(
+                            modifier = Modifier
+                                .fillMaxWidth()
+                                .padding(horizontal = 14.dp, vertical = 6.dp),
+                        ) {
+                            Text("${snap.month}月", style = MaterialTheme.typography.bodySmall, modifier = Modifier.weight(1f))
+                            Text(formatAmount(snap.income), style = MaterialTheme.typography.bodySmall, color = ec.incomeGreen, modifier = Modifier.weight(1f), textAlign = TextAlign.End)
+                            Text(formatAmount(kotlin.math.abs(snap.expense)), style = MaterialTheme.typography.bodySmall, color = ec.expenseRed, modifier = Modifier.weight(1f), textAlign = TextAlign.End)
+                            Text(formatAmount(snap.balance), style = MaterialTheme.typography.bodySmall, modifier = Modifier.weight(1f), textAlign = TextAlign.End)
+                        }
+                    }
                 }
             }
         }
@@ -197,7 +577,9 @@ private fun YearlyTabContent(uiState: ReportUiState, viewModel: ReportViewModel)
 private fun TrendTabContent(uiState: ReportUiState, viewModel: ReportViewModel) {
     val monthlyData = uiState.yearlyReport?.monthlyData.orEmpty()
     LazyColumn(
-        modifier = Modifier.fillMaxSize().padding(16.dp),
+        modifier = Modifier
+            .fillMaxSize()
+            .padding(16.dp),
         verticalArrangement = Arrangement.spacedBy(12.dp),
     ) {
         item {
@@ -206,16 +588,33 @@ private fun TrendTabContent(uiState: ReportUiState, viewModel: ReportViewModel) 
                 horizontalArrangement = Arrangement.SpaceBetween,
                 verticalAlignment = Alignment.CenterVertically,
             ) {
-                Button(onClick = viewModel::previousYear) { Text("上年") }
-                Text("${uiState.year} 年餘額趨勢", style = MaterialTheme.typography.titleLarge)
-                Button(onClick = viewModel::nextYear) { Text("下年") }
+                Box(
+                    modifier = Modifier
+                        .clip(RoundedCornerShape(8.dp))
+                        .background(MaterialTheme.colorScheme.surfaceVariant)
+                        .clickable { viewModel.previousYear() }
+                        .padding(horizontal = 10.dp, vertical = 6.dp),
+                ) { Text("◀", style = MaterialTheme.typography.labelMedium) }
+                Text(
+                    "${uiState.year} 年餘額趨勢",
+                    style = MaterialTheme.typography.titleLarge.copy(fontWeight = FontWeight.SemiBold),
+                )
+                Box(
+                    modifier = Modifier
+                        .clip(RoundedCornerShape(8.dp))
+                        .background(MaterialTheme.colorScheme.surfaceVariant)
+                        .clickable { viewModel.nextYear() }
+                        .padding(horizontal = 10.dp, vertical = 6.dp),
+                ) { Text("▶", style = MaterialTheme.typography.labelMedium) }
             }
         }
         if (monthlyData.isNotEmpty()) {
             item {
                 BalanceTrendChart(
                     monthlyData = monthlyData,
-                    modifier = Modifier.fillMaxWidth().height(220.dp),
+                    modifier = Modifier
+                        .fillMaxWidth()
+                        .height(220.dp),
                 )
             }
         } else {
@@ -225,29 +624,6 @@ private fun TrendTabContent(uiState: ReportUiState, viewModel: ReportViewModel) 
 }
 
 // ─── Charts ──────────────────────────────────────────────────────────────────
-
-@Composable
-private fun ExpensePieChart(breakdown: List<CategoryAmount>, modifier: Modifier = Modifier) {
-    val total = breakdown.sumOf { kotlin.math.abs(it.amount) }
-    if (total == 0.0) return
-    Canvas(modifier = modifier) {
-        val diameter = minOf(size.width, size.height)
-        val topLeft = Offset((size.width - diameter) / 2f, (size.height - diameter) / 2f)
-        var startAngle = -90f
-        breakdown.forEachIndexed { idx, item ->
-            val sweep = (kotlin.math.abs(item.amount) / total * 360f).toFloat()
-            drawArc(
-                color = ChartColors[idx % ChartColors.size],
-                startAngle = startAngle,
-                sweepAngle = sweep,
-                useCenter = true,
-                topLeft = topLeft,
-                size = Size(diameter, diameter),
-            )
-            startAngle += sweep
-        }
-    }
-}
 
 @Composable
 private fun IncomeExpenseBarChart(monthlyData: List<MonthlySnapshot>, modifier: Modifier = Modifier) {

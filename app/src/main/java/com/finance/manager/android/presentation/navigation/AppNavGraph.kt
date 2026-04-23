@@ -1,18 +1,29 @@
 package com.finance.manager.android.presentation.navigation
 
+import androidx.compose.animation.fadeIn
+import androidx.compose.animation.fadeOut
+import androidx.compose.animation.slideInHorizontally
+import androidx.compose.animation.slideOutHorizontally
+import androidx.compose.foundation.background
+import androidx.compose.foundation.clickable
+import androidx.compose.foundation.layout.Arrangement
+import androidx.compose.foundation.layout.Box
+import androidx.compose.foundation.layout.Column
+import androidx.compose.foundation.layout.Row
+import androidx.compose.foundation.layout.fillMaxWidth
+import androidx.compose.foundation.layout.height
 import androidx.compose.foundation.layout.padding
+import androidx.compose.foundation.layout.size
+import androidx.compose.foundation.shape.RoundedCornerShape
 import androidx.compose.material.icons.Icons
-import androidx.compose.material.icons.automirrored.filled.List
-import androidx.compose.material.icons.filled.AddCircle
+import androidx.compose.material.icons.filled.Add
+import androidx.compose.material.icons.filled.BarChart
 import androidx.compose.material.icons.filled.Home
-import androidx.compose.material.icons.filled.Person
 import androidx.compose.material.icons.filled.Settings
+import androidx.compose.material.icons.filled.AccountBalanceWallet
 import androidx.compose.material3.ExperimentalMaterial3Api
 import androidx.compose.material3.Icon
 import androidx.compose.material3.MaterialTheme
-import androidx.compose.material3.NavigationBar
-import androidx.compose.material3.NavigationBarItem
-import androidx.compose.material3.NavigationBarItemDefaults
 import androidx.compose.material3.Scaffold
 import androidx.compose.material3.Text
 import androidx.compose.runtime.Composable
@@ -20,9 +31,15 @@ import androidx.compose.runtime.getValue
 import androidx.compose.runtime.mutableStateOf
 import androidx.compose.runtime.remember
 import androidx.compose.runtime.setValue
+import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
+import androidx.compose.ui.draw.shadow
+import androidx.compose.ui.graphics.Brush
+import androidx.compose.ui.graphics.Color
 import androidx.compose.ui.graphics.vector.ImageVector
+import androidx.compose.ui.text.font.FontWeight
 import androidx.compose.ui.unit.dp
+import androidx.compose.ui.unit.sp
 import androidx.navigation.NavType
 import androidx.navigation.compose.NavHost
 import androidx.navigation.compose.composable
@@ -41,12 +58,16 @@ import com.finance.manager.android.presentation.report.ReportScreen
 import com.finance.manager.android.presentation.settings.SettingsScreen
 import com.finance.manager.android.presentation.tag.TagManagementScreen
 import com.finance.manager.android.presentation.transaction.TransactionFormScreen
+import com.finance.manager.android.ui.theme.GradientEnd
+import com.finance.manager.android.ui.theme.GradientStart
+import com.finance.manager.android.ui.theme.OutlineVariant
 
 private data class BottomNavItem(
+    val id: String,
     val label: String,
-    val route: String,
-    val selectedIcon: ImageVector,
-    val unselectedIcon: ImageVector,
+    val route: String?,
+    val icon: ImageVector,
+    val isSpecial: Boolean = false,
 )
 
 @OptIn(ExperimentalMaterial3Api::class)
@@ -56,12 +77,19 @@ fun AppNavGraph(modifier: Modifier = Modifier) {
     var showQuickAddSheet by remember { mutableStateOf(false) }
 
     val bottomNavItems = listOf(
-        BottomNavItem("首頁", Screen.Dashboard.route, Icons.Filled.Home, Icons.Filled.Home),
-        BottomNavItem("報表", Screen.Reports.route, Icons.AutoMirrored.Filled.List, Icons.AutoMirrored.Filled.List),
-        BottomNavItem("設定", Screen.Settings.route, Icons.Filled.Settings, Icons.Filled.Settings),
+        BottomNavItem("dashboard", "首頁", Screen.Dashboard.route, Icons.Filled.Home),
+        BottomNavItem("accounts", "帳戶", Screen.Accounts.route, Icons.Filled.AccountBalanceWallet),
+        BottomNavItem("quickadd", "記帳", null, Icons.Filled.Add, isSpecial = true),
+        BottomNavItem("reports", "報表", Screen.Reports.route, Icons.Filled.BarChart),
+        BottomNavItem("settings", "設定", Screen.Settings.route, Icons.Filled.Settings),
     )
 
-    val topLevelRoutes = setOf(Screen.Dashboard.route, Screen.Reports.route, Screen.Settings.route)
+    val topLevelRoutes = setOf(
+        Screen.Dashboard.route,
+        Screen.Accounts.route,
+        Screen.Reports.route,
+        Screen.Settings.route,
+    )
     val navBackStackEntry by navController.currentBackStackEntryAsState()
     val currentRoute = navBackStackEntry?.destination?.route
     val showBottomBar = currentRoute in topLevelRoutes
@@ -70,36 +98,23 @@ fun AppNavGraph(modifier: Modifier = Modifier) {
         modifier = modifier,
         bottomBar = {
             if (showBottomBar) {
-                NavigationBar(
-                    containerColor = MaterialTheme.colorScheme.surface,
-                    tonalElevation = 3.dp,
-                ) {
-                    bottomNavItems.forEach { item ->
-                        val selected = currentRoute == item.route
-                        NavigationBarItem(
-                            selected = selected,
-                            onClick = {
-                                navController.navigate(item.route) {
+                FinanceBottomBar(
+                    items = bottomNavItems,
+                    currentRoute = currentRoute,
+                    onNavigate = { item ->
+                        if (item.isSpecial) {
+                            showQuickAddSheet = true
+                        } else {
+                            item.route?.let { route ->
+                                navController.navigate(route) {
                                     popUpTo(Screen.Dashboard.route) { saveState = true }
                                     launchSingleTop = true
                                     restoreState = true
                                 }
-                            },
-                            icon = {
-                                Icon(
-                                    imageVector = if (selected) item.selectedIcon else item.unselectedIcon,
-                                    contentDescription = item.label,
-                                )
-                            },
-                            label = { Text(item.label) },
-                            colors = NavigationBarItemDefaults.colors(
-                                selectedIconColor = MaterialTheme.colorScheme.primary,
-                                selectedTextColor = MaterialTheme.colorScheme.primary,
-                                indicatorColor = MaterialTheme.colorScheme.primaryContainer,
-                            ),
-                        )
-                    }
-                }
+                            }
+                        }
+                    },
+                )
             }
         }
     ) { paddingValues ->
@@ -107,13 +122,24 @@ fun AppNavGraph(modifier: Modifier = Modifier) {
             navController = navController,
             startDestination = Screen.Dashboard.route,
             modifier = Modifier.padding(paddingValues),
+            enterTransition = { slideInHorizontally(initialOffsetX = { it }) + fadeIn() },
+            exitTransition = { slideOutHorizontally(targetOffsetX = { -it }) + fadeOut() },
+            popEnterTransition = { slideInHorizontally(initialOffsetX = { -it }) + fadeIn() },
+            popExitTransition = { slideOutHorizontally(targetOffsetX = { it }) + fadeOut() },
         ) {
             composable(Screen.Dashboard.route) {
                 DashboardScreen(
                     onOpenRegister = { accountId ->
                         navController.navigate(Screen.AccountRegister.createRoute(accountId))
                     },
-                    onAddAccount = { navController.navigate(Screen.AccountForm.createRoute()) },
+                    onOpenAccounts = {
+                        navController.navigate(Screen.Accounts.route) {
+                            popUpTo(Screen.Dashboard.route) { saveState = true }
+                            launchSingleTop = true
+                            restoreState = true
+                        }
+                    },
+                    onQuickAdd = { showQuickAddSheet = true },
                 )
             }
 
@@ -151,6 +177,7 @@ fun AppNavGraph(modifier: Modifier = Modifier) {
                     onCreateAccount = { navController.navigate(Screen.AccountForm.createRoute()) },
                     onEditAccount = { accountId -> navController.navigate(Screen.AccountForm.createRoute(accountId)) },
                     onOpenRegister = { accountId -> navController.navigate(Screen.AccountRegister.createRoute(accountId)) },
+                    onNavigateBack = { navController.popBackStack() },
                 )
             }
 
@@ -211,5 +238,93 @@ fun AppNavGraph(modifier: Modifier = Modifier) {
                 }
             },
         )
+    }
+}
+
+@Composable
+private fun FinanceBottomBar(
+    items: List<BottomNavItem>,
+    currentRoute: String?,
+    onNavigate: (BottomNavItem) -> Unit,
+) {
+    Row(
+        modifier = Modifier
+            .fillMaxWidth()
+            .shadow(8.dp)
+            .background(MaterialTheme.colorScheme.surface)
+            .height(64.dp),
+        verticalAlignment = Alignment.CenterVertically,
+    ) {
+        items.forEach { item ->
+            val isActive = currentRoute == item.route
+            Box(
+                modifier = Modifier
+                    .weight(1f)
+                    .clickable { onNavigate(item) }
+                    .padding(vertical = 4.dp),
+                contentAlignment = Alignment.Center,
+            ) {
+                Column(
+                    horizontalAlignment = Alignment.CenterHorizontally,
+                    verticalArrangement = Arrangement.Center,
+                ) {
+                    if (item.isSpecial) {
+                        // 記帳 - gradient pill button
+                        Box(
+                            modifier = Modifier
+                                .size(width = 52.dp, height = 32.dp)
+                                .background(
+                                    brush = Brush.linearGradient(listOf(GradientStart, GradientEnd)),
+                                    shape = RoundedCornerShape(16.dp),
+                                )
+                                .shadow(4.dp, RoundedCornerShape(16.dp), clip = false),
+                            contentAlignment = Alignment.Center,
+                        ) {
+                            Icon(
+                                imageVector = item.icon,
+                                contentDescription = item.label,
+                                modifier = Modifier.size(20.dp),
+                                tint = Color.White,
+                            )
+                        }
+                        Text(
+                            text = item.label,
+                            fontSize = 11.sp,
+                            fontWeight = FontWeight.Medium,
+                            color = MaterialTheme.colorScheme.primary,
+                            modifier = Modifier.padding(top = 2.dp),
+                        )
+                    } else {
+                        // Normal tab
+                        val tint = if (isActive) MaterialTheme.colorScheme.primary
+                        else MaterialTheme.colorScheme.onSurfaceVariant
+                        Box(
+                            modifier = Modifier
+                                .size(width = 52.dp, height = 32.dp)
+                                .background(
+                                    color = if (isActive) MaterialTheme.colorScheme.primary.copy(alpha = 0.12f)
+                                    else Color.Transparent,
+                                    shape = RoundedCornerShape(16.dp),
+                                ),
+                            contentAlignment = Alignment.Center,
+                        ) {
+                            Icon(
+                                imageVector = item.icon,
+                                contentDescription = item.label,
+                                modifier = Modifier.size(22.dp),
+                                tint = tint,
+                            )
+                        }
+                        Text(
+                            text = item.label,
+                            fontSize = 11.sp,
+                            fontWeight = FontWeight.Medium,
+                            color = tint,
+                            letterSpacing = 0.5.sp,
+                        )
+                    }
+                }
+            }
+        }
     }
 }
