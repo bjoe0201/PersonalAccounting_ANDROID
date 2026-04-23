@@ -1,6 +1,10 @@
 package com.finance.manager.android.data.local.dao
 
 import androidx.room.ColumnInfo
+import androidx.room.Embedded
+import com.finance.manager.android.data.local.entity.CategoryEntity
+import com.finance.manager.android.data.local.entity.PayeeEntity
+import com.finance.manager.android.data.local.entity.TagEntity
 
 data class CategoryAmountLocal(
     @ColumnInfo(name = "category_id") val categoryId: Int,
@@ -21,4 +25,21 @@ data class TransactionListItemLocal(
     @ColumnInfo(name = "memo") val memo: String? = null,
     @ColumnInfo(name = "cleared_status") val clearedStatus: String,
 )
+
+data class CategoryWithUsageLocal(
+    @Embedded val category: CategoryEntity,
+    @ColumnInfo(name = "usage_count") val usageCount: Int,
+)
+
+data class PayeeWithUsageLocal(
+    @Embedded val payee: PayeeEntity,
+    @ColumnInfo(name = "usage_count") val usageCount: Int,
+    @ColumnInfo(name = "total_amount") val totalAmount: Double,
+)
+
+data class TagWithUsageLocal(
+    @Embedded val tag: TagEntity,
+    @ColumnInfo(name = "usage_count") val usageCount: Int,
+)
+
 

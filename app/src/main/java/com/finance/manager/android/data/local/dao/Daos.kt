@@ -205,8 +205,43 @@ interface CategoryDao {
     @Query("SELECT * FROM categories WHERE category_type = :categoryType ORDER BY parent_category_id, display_order, category_name")
     suspend fun getByType(categoryType: String): List<CategoryEntity>
 
+    @Query("SELECT * FROM categories ORDER BY category_name")
+    fun observeAll(): Flow<List<CategoryEntity>>
+
+    @Query("SELECT * FROM categories WHERE category_id = :id LIMIT 1")
+    suspend fun getById(id: Int): CategoryEntity?
+
+    @Query("SELECT EXISTS(SELECT 1 FROM categories WHERE category_name = :name AND (:excludeId IS NULL OR category_id != :excludeId))")
+    suspend fun existsByName(name: String, excludeId: Int? = null): Boolean
+
+    @Query(
+        """
+        SELECT c.*,
+               (SELECT COUNT(*) FROM transactions t WHERE t.category_id = c.category_id)
+             + (SELECT COUNT(*) FROM transaction_splits s WHERE s.category_id = c.category_id) AS usage_count
+        FROM categories c
+        ORDER BY c.category_name
+        """
+    )
+    fun observeAllWithUsage(): Flow<List<CategoryWithUsageLocal>>
+
+    @Query("SELECT (SELECT COUNT(*) FROM transactions t WHERE t.category_id = :id) + (SELECT COUNT(*) FROM transaction_splits s WHERE s.category_id = :id)")
+    suspend fun countUsage(id: Int): Int
+
+    @Query("SELECT COUNT(*) FROM categories WHERE parent_category_id = :parentId")
+    suspend fun countChildren(parentId: Int): Int
+
     @Insert(onConflict = OnConflictStrategy.REPLACE)
     suspend fun insert(entity: CategoryEntity): Long
+
+    @Update
+    suspend fun update(entity: CategoryEntity)
+
+    @Query("UPDATE categories SET is_hidden = :hidden WHERE category_id = :id")
+    suspend fun setHidden(id: Int, hidden: Boolean)
+
+    @Query("DELETE FROM categories WHERE category_id = :id")
+    suspend fun deleteById(id: Int)
 
     @Query("DELETE FROM categories")
     suspend fun deleteAll()
@@ -247,8 +282,36 @@ interface PayeeDao {
     @Query("SELECT * FROM payees WHERE payee_name = :name LIMIT 1")
     suspend fun findByName(name: String): PayeeEntity?
 
+    @Query("SELECT EXISTS(SELECT 1 FROM payees WHERE payee_name = :name AND (:excludeId IS NULL OR payee_id != :excludeId))")
+    suspend fun existsByName(name: String, excludeId: Int? = null): Boolean
+
+    @Query(
+        """
+        SELECT p.*,
+               COALESCE(SUM(ABS(t.amount)), 0) AS total_amount,
+               COUNT(t.transaction_id) AS usage_count
+        FROM payees p
+        LEFT JOIN transactions t ON t.payee_id = p.payee_id
+        GROUP BY p.payee_id
+        ORDER BY p.payee_name
+        """
+    )
+    fun observeAllWithStats(): Flow<List<PayeeWithUsageLocal>>
+
+    @Query("SELECT COUNT(*) FROM transactions WHERE payee_id = :id")
+    suspend fun countUsage(id: Int): Int
+
     @Insert(onConflict = OnConflictStrategy.REPLACE)
     suspend fun insert(entity: PayeeEntity): Long
+
+    @Update
+    suspend fun update(entity: PayeeEntity)
+
+    @Query("UPDATE payees SET is_hidden = :hidden WHERE payee_id = :id")
+    suspend fun setHidden(id: Int, hidden: Boolean)
+
+    @Query("DELETE FROM payees WHERE payee_id = :id")
+    suspend fun deleteById(id: Int)
 
     @Query("DELETE FROM payees")
     suspend fun deleteAll()
@@ -256,8 +319,37 @@ interface PayeeDao {
 
 @Dao
 interface TagDao {
+    @Query("SELECT * FROM tags WHERE tag_id = :id LIMIT 1")
+    suspend fun getById(id: Int): TagEntity?
+
+    @Query("SELECT EXISTS(SELECT 1 FROM tags WHERE tag_name = :name AND (:excludeId IS NULL OR tag_id != :excludeId))")
+    suspend fun existsByName(name: String, excludeId: Int? = null): Boolean
+
+    @Query(
+        """
+        SELECT g.*,
+               (SELECT COUNT(*) FROM transaction_tags tt WHERE tt.tag_id = g.tag_id)
+             + (SELECT COUNT(*) FROM transaction_split_tags st WHERE st.tag_id = g.tag_id) AS usage_count
+        FROM tags g
+        ORDER BY g.tag_name
+        """
+    )
+    fun observeAllWithUsage(): Flow<List<TagWithUsageLocal>>
+
+    @Query("SELECT (SELECT COUNT(*) FROM transaction_tags tt WHERE tt.tag_id = :id) + (SELECT COUNT(*) FROM transaction_split_tags st WHERE st.tag_id = :id)")
+    suspend fun countUsage(id: Int): Int
+
     @Insert(onConflict = OnConflictStrategy.REPLACE)
     suspend fun insert(entity: TagEntity): Long
+
+    @Update
+    suspend fun update(entity: TagEntity)
+
+    @Query("UPDATE tags SET is_hidden = :hidden WHERE tag_id = :id")
+    suspend fun setHidden(id: Int, hidden: Boolean)
+
+    @Query("DELETE FROM tags WHERE tag_id = :id")
+    suspend fun deleteById(id: Int)
 
     @Query("DELETE FROM tags")
     suspend fun deleteAll()

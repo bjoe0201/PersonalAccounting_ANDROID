@@ -32,11 +32,14 @@ import androidx.navigation.navArgument
 import com.finance.manager.android.presentation.account.AccountFormScreen
 import com.finance.manager.android.presentation.account.AccountListScreen
 import com.finance.manager.android.presentation.accountregister.AccountRegisterScreen
+import com.finance.manager.android.presentation.category.CategoryManagementScreen
 import com.finance.manager.android.presentation.currency.CurrencyManageScreen
 import com.finance.manager.android.presentation.dashboard.DashboardScreen
+import com.finance.manager.android.presentation.payee.PayeeManagementScreen
 import com.finance.manager.android.presentation.quickadd.QuickAddBottomSheet
 import com.finance.manager.android.presentation.report.ReportScreen
 import com.finance.manager.android.presentation.settings.SettingsScreen
+import com.finance.manager.android.presentation.tag.TagManagementScreen
 import com.finance.manager.android.presentation.transaction.TransactionFormScreen
 
 private data class BottomNavItem(
@@ -54,13 +57,11 @@ fun AppNavGraph(modifier: Modifier = Modifier) {
 
     val bottomNavItems = listOf(
         BottomNavItem("首頁", Screen.Dashboard.route, Icons.Filled.Home, Icons.Filled.Home),
-        BottomNavItem("帳戶", Screen.Accounts.route, Icons.Filled.Person, Icons.Filled.Person),
-        BottomNavItem("記帳", "add_transaction", Icons.Filled.AddCircle, Icons.Filled.AddCircle),
         BottomNavItem("報表", Screen.Reports.route, Icons.AutoMirrored.Filled.List, Icons.AutoMirrored.Filled.List),
         BottomNavItem("設定", Screen.Settings.route, Icons.Filled.Settings, Icons.Filled.Settings),
     )
 
-    val topLevelRoutes = setOf(Screen.Dashboard.route, Screen.Accounts.route, Screen.Reports.route, Screen.Settings.route)
+    val topLevelRoutes = setOf(Screen.Dashboard.route, Screen.Reports.route, Screen.Settings.route)
     val navBackStackEntry by navController.currentBackStackEntryAsState()
     val currentRoute = navBackStackEntry?.destination?.route
     val showBottomBar = currentRoute in topLevelRoutes
@@ -74,21 +75,14 @@ fun AppNavGraph(modifier: Modifier = Modifier) {
                     tonalElevation = 3.dp,
                 ) {
                     bottomNavItems.forEach { item ->
-                        val selected = when (item.route) {
-                            "add_transaction" -> showQuickAddSheet
-                            else -> currentRoute == item.route
-                        }
+                        val selected = currentRoute == item.route
                         NavigationBarItem(
                             selected = selected,
                             onClick = {
-                                if (item.route == "add_transaction") {
-                                    showQuickAddSheet = true
-                                } else {
-                                    navController.navigate(item.route) {
-                                        popUpTo(Screen.Dashboard.route) { saveState = true }
-                                        launchSingleTop = true
-                                        restoreState = true
-                                    }
+                                navController.navigate(item.route) {
+                                    popUpTo(Screen.Dashboard.route) { saveState = true }
+                                    launchSingleTop = true
+                                    restoreState = true
                                 }
                             },
                             icon = {
@@ -130,11 +124,26 @@ fun AppNavGraph(modifier: Modifier = Modifier) {
             composable(Screen.Settings.route) {
                 SettingsScreen(
                     onOpenCurrencies = { navController.navigate(Screen.Currencies.route) },
+                    onOpenCategories = { navController.navigate(Screen.CategoryManagement.route) },
+                    onOpenPayees = { navController.navigate(Screen.PayeeManagement.route) },
+                    onOpenTags = { navController.navigate(Screen.TagManagement.route) },
                 )
             }
 
             composable(Screen.Currencies.route) {
                 CurrencyManageScreen(onNavigateBack = { navController.popBackStack() })
+            }
+
+            composable(Screen.CategoryManagement.route) {
+                CategoryManagementScreen(onNavigateBack = { navController.popBackStack() })
+            }
+
+            composable(Screen.PayeeManagement.route) {
+                PayeeManagementScreen(onNavigateBack = { navController.popBackStack() })
+            }
+
+            composable(Screen.TagManagement.route) {
+                TagManagementScreen(onNavigateBack = { navController.popBackStack() })
             }
 
             composable(Screen.Accounts.route) {

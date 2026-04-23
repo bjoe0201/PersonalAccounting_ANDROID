@@ -6,6 +6,7 @@ import com.finance.manager.android.domain.usecase.backup.BackupDatabaseUseCase
 import com.finance.manager.android.domain.usecase.backup.BackupFileItem
 import com.finance.manager.android.domain.usecase.backup.ListBackupsUseCase
 import com.finance.manager.android.domain.usecase.backup.RestoreDatabaseUseCase
+import com.finance.manager.android.domain.usecase.database.ResetDatabaseUseCase
 import com.finance.manager.android.domain.usecase.snapshot.RebuildAllSnapshotsUseCase
 import io.mockk.coEvery
 import io.mockk.coVerify
@@ -39,6 +40,7 @@ class SettingsViewModelTest {
     private lateinit var backupDatabaseUseCase: BackupDatabaseUseCase
     private lateinit var listBackupsUseCase: ListBackupsUseCase
     private lateinit var restoreDatabaseUseCase: RestoreDatabaseUseCase
+    private lateinit var resetDatabaseUseCase: ResetDatabaseUseCase
 
     private val sampleBackups = listOf(
         BackupFileItem("finance_backup_20260101_120000.db", "/storage/backup/finance_backup_20260101_120000.db", 1000L),
@@ -51,6 +53,7 @@ class SettingsViewModelTest {
         backupDatabaseUseCase = mockk()
         listBackupsUseCase = mockk()
         restoreDatabaseUseCase = mockk()
+        resetDatabaseUseCase = mockk()
 
         coEvery { listBackupsUseCase() } returns sampleBackups
     }
@@ -65,6 +68,7 @@ class SettingsViewModelTest {
         backupDatabaseUseCase,
         listBackupsUseCase,
         restoreDatabaseUseCase,
+        resetDatabaseUseCase,
     )
 
     @Test

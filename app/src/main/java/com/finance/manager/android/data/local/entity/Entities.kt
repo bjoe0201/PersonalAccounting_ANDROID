@@ -62,6 +62,8 @@ data class CategoryEntity(
     @ColumnInfo(name = "parent_category_id") val parentCategoryId: Int? = null,
     @ColumnInfo(name = "tax_line") val taxLine: String? = null,
     @ColumnInfo(name = "display_order") val displayOrder: Int = 0,
+    @ColumnInfo(name = "is_hidden") val isHidden: Boolean = false,
+    @ColumnInfo(name = "description") val description: String? = null,
     @ColumnInfo(name = "user_id") val userId: String = "local",
     @ColumnInfo(name = "created_at") val createdAt: String,
 )
@@ -89,6 +91,9 @@ data class PayeeEntity(
     @PrimaryKey(autoGenerate = true)
     @ColumnInfo(name = "payee_id") val payeeId: Int = 0,
     @ColumnInfo(name = "payee_name") val payeeName: String,
+    @ColumnInfo(name = "is_hidden") val isHidden: Boolean = false,
+    @ColumnInfo(name = "description") val description: String? = null,
+    @ColumnInfo(name = "display_order") val displayOrder: Int = 0,
     @ColumnInfo(name = "user_id") val userId: String = "local",
     @ColumnInfo(name = "created_at") val createdAt: String,
 )
@@ -98,6 +103,10 @@ data class TagEntity(
     @PrimaryKey(autoGenerate = true)
     @ColumnInfo(name = "tag_id") val tagId: Int = 0,
     @ColumnInfo(name = "tag_name") val tagName: String,
+    @ColumnInfo(name = "is_hidden") val isHidden: Boolean = false,
+    @ColumnInfo(name = "description") val description: String? = null,
+    @ColumnInfo(name = "tag_type") val tagType: String? = null,
+    @ColumnInfo(name = "display_order") val displayOrder: Int = 0,
     @ColumnInfo(name = "user_id") val userId: String = "local",
     @ColumnInfo(name = "created_at") val createdAt: String,
 )

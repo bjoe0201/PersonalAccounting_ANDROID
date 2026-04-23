@@ -32,7 +32,12 @@ object DatabaseModule {
             context,
             AppDatabase::class.java,
             "finance_manager.db",
-        ).build()
+        )
+            // 開發期 schema 變動頻繁：版本升/降、或從任何舊版過來，一律銷毀重建。
+            .fallbackToDestructiveMigration()
+            .fallbackToDestructiveMigrationOnDowngrade()
+            .fallbackToDestructiveMigrationFrom(1)
+            .build()
     }
 
     @Provides fun provideAccountDao(db: AppDatabase): AccountDao = db.accountDao()

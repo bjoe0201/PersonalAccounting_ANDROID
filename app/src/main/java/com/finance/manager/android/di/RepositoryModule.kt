@@ -4,11 +4,13 @@ import com.finance.manager.android.data.repository.AccountRepositoryImpl
 import com.finance.manager.android.data.repository.CategoryRepositoryImpl
 import com.finance.manager.android.data.repository.CurrencyRepositoryImpl
 import com.finance.manager.android.data.repository.PayeeRepositoryImpl
+import com.finance.manager.android.data.repository.TagRepositoryImpl
 import com.finance.manager.android.data.repository.TransactionRepositoryImpl
 import com.finance.manager.android.domain.repository.AccountRepository
 import com.finance.manager.android.domain.repository.CategoryRepository
 import com.finance.manager.android.domain.repository.CurrencyRepository
 import com.finance.manager.android.domain.repository.PayeeRepository
+import com.finance.manager.android.domain.repository.TagRepository
 import com.finance.manager.android.domain.repository.TransactionRepository
 import dagger.Binds
 import dagger.Module
@@ -35,6 +37,10 @@ abstract class RepositoryModule {
     @Binds
     @Singleton
     abstract fun bindPayeeRepository(impl: PayeeRepositoryImpl): PayeeRepository
+
+    @Binds
+    @Singleton
+    abstract fun bindTagRepository(impl: TagRepositoryImpl): TagRepository
 
     @Binds
     @Singleton

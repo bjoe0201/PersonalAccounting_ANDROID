@@ -39,7 +39,7 @@ import com.finance.manager.android.data.local.entity.TransactionTagEntity
         AccountMonthlyBalanceEntity::class,
         AppSettingEntity::class,
     ],
-    version = 1,
+    version = 2,
     exportSchema = true,
 )
 abstract class AppDatabase : RoomDatabase() {

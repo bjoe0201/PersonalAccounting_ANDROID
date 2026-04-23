@@ -43,6 +43,9 @@ import java.util.Date
 @Composable
 fun SettingsScreen(
     onOpenCurrencies: () -> Unit,
+    onOpenCategories: () -> Unit = {},
+    onOpenPayees: () -> Unit = {},
+    onOpenTags: () -> Unit = {},
     viewModel: SettingsViewModel = hiltViewModel(),
 ) {
     val uiState by viewModel.uiState.collectAsState()
@@ -177,6 +180,15 @@ fun SettingsScreen(
                         CircularProgressIndicator()
                     }
                     uiState.progressMessage?.let { Text(it) }
+                    Button(modifier = Modifier.fillMaxWidth(), onClick = onOpenCategories) {
+                        Text("類別管理")
+                    }
+                    Button(modifier = Modifier.fillMaxWidth(), onClick = onOpenPayees) {
+                        Text("付款人管理")
+                    }
+                    Button(modifier = Modifier.fillMaxWidth(), onClick = onOpenTags) {
+                        Text("標籤管理")
+                    }
                     Button(modifier = Modifier.fillMaxWidth(), onClick = onOpenCurrencies) {
                         Text("幣別管理")
                     }
